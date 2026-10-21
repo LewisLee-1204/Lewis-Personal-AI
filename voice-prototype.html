@@ -1,0 +1,421 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050b19">
+<title>灵克 AI Voice</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg:#050b19;
+  --panel:#0c1730;
+  --blue:#45caff;
+  --purple:#9270ff;
+  --muted:#91a7c8;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; min-height:100dvh;
+  background:radial-gradient(ellipse at 50% 28%,#102750 0%,var(--bg) 58%);
+  color:#f4f8ff;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+button,select { font:inherit; }
+button { cursor:pointer; }
+.app {
+  width:min(100%,520px); margin:auto;
+  min-height:100dvh; padding:env(safe-area-inset-top) 20px calc(24px + env(safe-area-inset-bottom));
+  display:flex; flex-direction:column;
+}
+header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 0 12px;
+}
+.brand { display:flex; align-items:center; gap:11px; }
+.logo {
+  width:44px;height:44px;border-radius:15px;
+  display:grid;place-items:center;
+  background:linear-gradient(145deg,#163b70,#12152e);
+  border:1px solid #398dff; box-shadow:0 0 20px #277fff30;
+  font-size:24px;
+}
+h1 { font-size:19px; margin:0; letter-spacing:.5px; }
+.subtitle { color:var(--muted);font-size:11px;margin-top:4px; }
+.icon-btn {
+  border:1px solid #263b5c;background:#101d35;color:#dbeaff;
+  border-radius:13px;width:42px;height:42px;
+}
+.status {
+  text-align:center;color:#9bcaff;font-size:13px;
+  margin-top:20px; min-height:20px;
+}
+.orb-area {
+  min-height:255px;display:grid;place-items:center;position:relative;
+}
+.orb {
+  width:174px;height:174px;border-radius:50%;
+  position:relative;display:grid;place-items:center;
+  background:radial-gradient(circle at 36% 28%,#388fff 0%,#172c6d 27%,#10142f 62%,#090f24 100%);
+  border:2px solid #67cfff;
+  box-shadow:0 0 15px #38baff,0 0 45px #357aff66,inset 0 0 30px #845fff55;
+  transition:transform .25s,box-shadow .25s;
+}
+.orb:before,.orb:after {
+  content:"";position:absolute;inset:-13px;border-radius:50%;
+  border:1px solid #479dff80;animation:ring 4s linear infinite;
+}
+.orb:after { inset:-25px;border-color:#9671ff45;animation-duration:6s; }
+.orb-core {
+  width:95px;height:95px;border-radius:50%;
+  background:radial-gradient(circle at 35% 25%,#65ddff,#294cba 48%,#101b4b 75%);
+  box-shadow:inset 0 0 20px #fff5,0 0 28px #4ab9ff70;
+  display:grid;place-items:center;font-size:42px;
+}
+body.listening .orb {
+  transform:scale(1.04);
+  box-shadow:0 0 22px #38d9ff,0 0 65px #357aff99;
+  animation:breathe 1.3s ease-in-out infinite alternate;
+}
+body.thinking .orb { animation:breathe .7s ease-in-out infinite alternate; }
+body.speaking .orb { animation:breathe .45s ease-in-out infinite alternate; }
+@keyframes ring { to { transform:rotate(360deg); } }
+@keyframes breathe { to { transform:scale(1.08); } }
+.greeting { text-align:center;font-size:22px;font-weight:650;margin:0 0 9px; }
+.hint { text-align:center;color:var(--muted);font-size:13px;line-height:1.6; }
+.language-row { display:flex;justify-content:center;margin:20px 0 16px; }
+select {
+  color:#e4efff;background:#101e38;border:1px solid #2c4770;
+  padding:11px 14px;border-radius:14px;max-width:100%;
+}
+.transcript {
+  background:#09152a;border:1px solid #1d3456;border-radius:18px;
+  padding:14px;margin:0 0 15px;min-height:80px;
+}
+.transcript-top { display:flex;justify-content:space-between;align-items:center;margin-bottom:12px; }
+.transcript-title { font-size:13px;font-weight:600; }
+.small-btn {
+  background:transparent;color:#8fcfff;border:0;font-size:12px;padding:6px;
+}
+.messages { display:flex;flex-direction:column;gap:10px;max-height:230px;overflow:auto; }
+.message { padding:10px 12px;border-radius:13px;font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere; }
+.message.user { align-self:flex-end;background:#173e75;max-width:90%; }
+.message.ai { align-self:flex-start;background:#142039;border:1px solid #253a5d;max-width:95%; }
+.message.note { align-self:center;background:transparent;color:var(--muted);font-size:12px;text-align:center; }
+.controls {
+  display:flex;align-items:center;justify-content:center;gap:24px;margin-top:14px;
+}
+.control { display:flex;flex-direction:column;align-items:center;gap:8px;color:#b9cbe6;font-size:12px; }
+.round {
+  width:55px;height:55px;border-radius:50%;border:1px solid #304a70;
+  background:#12213c;color:#e8f4ff;display:grid;place-items:center;font-size:21px;
+}
+.round.end { width:68px;height:68px;background:#d9475c;border:0;font-size:25px; }
+.round.main { width:68px;height:68px;background:linear-gradient(145deg,#39baff,#655cff);border:0;font-size:25px;box-shadow:0 0 25px #418fff50; }
+.bottom-note { text-align:center;color:#627a9e;font-size:11px;line-height:1.6;margin-top:auto;padding-top:22px; }
+.hidden { display:none !important; }
+button:focus-visible,select:focus-visible { outline:2px solid var(--blue);outline-offset:3px; }
+@media(max-height:740px) {
+  .orb-area { min-height:205px; }
+  .orb { width:145px;height:145px; }
+  .orb-core { width:78px;height:78px;font-size:34px; }
+  .greeting { font-size:20px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo">✦</div>
+      <div>
+        <h1>灵克 AI <span style="color:#72caff">Voice</span></h1>
+        <div class="subtitle">你的私人 AI · 随时随地，和我聊</div>
+      </div>
+    </div>
+    <button class="icon-btn" id="settingsBtn" aria-label="语音设置">⚙</button>
+  </header>
+
+  <div class="status" id="status">语音原型已准备好</div>
+
+  <div class="orb-area">
+    <div class="orb"><div class="orb-core">✦</div></div>
+  </div>
+
+  <h2 class="greeting" id="greeting">你好，我在这里。</h2>
+  <div class="hint" id="hint">点击麦克风，开始语音体验</div>
+
+  <div class="language-row">
+    <select id="language" aria-label="对话语言">
+      <option value="auto">🌐 自动语言模式（实验性）</option>
+      <option value="zh-CN">🇨🇳 中文 Mandarin</option>
+      <option value="en-US">🇬🇧 English</option>
+      <option value="ms-MY">🇲🇾 Bahasa Melayu</option>
+    </select>
+  </div>
+
+  <section class="transcript" id="transcriptPanel">
+    <div class="transcript-top">
+      <span class="transcript-title">💬 对话记录</span>
+      <button class="small-btn" id="modeBtn">切换简洁模式</button>
+    </div>
+    <div class="messages" id="messages" aria-live="polite">
+      <div class="message note">对话记录会显示在这里</div>
+    </div>
+  </section>
+
+  <div class="controls">
+    <div class="control">
+      <button class="round" id="micBtn" aria-label="开始麦克风">🎙</button>
+      <span id="micLabel">开始聆听</span>
+    </div>
+    <div class="control">
+      <button class="round end" id="endBtn" aria-label="结束通话">☎</button>
+      <span>结束</span>
+    </div>
+    <div class="control">
+      <button class="round" id="speakerBtn" aria-label="切换语音播放">🔊</button>
+      <span id="speakerLabel">语音播放开</span>
+    </div>
+  </div>
+
+  <div class="bottom-note">
+    灵克 AI 独立语音界面原型<br>
+    尚未连接本地 AI 模型 · 不会修改你的正式网站
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const state = {
+    listening:false, speaking:false, compact:false, speaker:true,
+    recognition:null, interim:"", finalText:"", busy:false
+  };
+
+  function setStatus(text, mode="") {
+    $("status").textContent = text;
+    document.body.classList.remove("listening","thinking","speaking");
+    if (mode) document.body.classList.add(mode);
+    $("greeting").textContent = mode==="listening" ? "我正在聆听…" :
+      mode==="thinking" ? "让我想一想…" :
+      mode==="speaking" ? "我正在回答…" :
+      "你好，我在这里。";
+  }
+
+  function addMessage(text, who="note") {
+    const el = document.createElement("div");
+    el.className = "message " + who;
+    el.textContent = text;
+    $("messages").appendChild(el);
+    $("messages").scrollTop = $("messages").scrollHeight;
+    while ($("messages").children.length > 60) {
+      $("messages").removeChild($("messages").firstChild);
+    }
+    return el;
+  }
+
+  function selectedLanguage(text="") {
+    const choice = $("language").value;
+    if (choice !== "auto") return choice;
+
+    // 这是简单的界面级判断，不等于可靠的多语言语音识别。
+    if (/[\u3400-\u9fff]/.test(text)) return "zh-CN";
+    if (/\b(saya|awak|anda|boleh|terima kasih|selamat|apa|tidak|yang|untuk)\b/i.test(text)) return "ms-MY";
+    return "en-US";
+  }
+
+  function languageName(code) {
+    return code==="zh-CN" ? "中文" : code==="ms-MY" ? "Bahasa Melayu" : "English";
+  }
+
+  function stopSpeech() {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    state.speaking = false;
+  }
+
+  function speak(text, lang) {
+    if (!state.speaker || !("speechSynthesis" in window)) return;
+    stopSpeech();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.onstart = () => {
+      state.speaking = true;
+      setStatus("正在使用设备语音回答", "speaking");
+      $("hint").textContent = "你可以随时结束播放";
+    };
+    utterance.onend = () => {
+      state.speaking = false;
+      if (!state.listening) {
+        setStatus("原型待命");
+        $("hint").textContent = "点击麦克风，再说下一句话";
+      }
+    };
+    utterance.onerror = () => {
+      state.speaking = false;
+      setStatus("语音播放暂不可用");
+    };
+    window.speechSynthesis.speak(utterance);
+  }
+
+  // 当前是界面演示回复，不是 Qwen 或在线 AI 生成的答案。
+  function demoReply(text, lang) {
+    const reply = lang==="zh-CN"
+      ? "我听到了你说：“"+text+"”。目前我还处于语音原型阶段，尚未连接你的本地 Qwen AI。等接通模型后，我就能真正理解问题并回答你。"
+      : lang==="ms-MY"
+      ? "Saya dengar: “"+text+"”. Ini masih prototaip dan belum disambungkan kepada model AI tempatan anda."
+      : 'I heard you say: "'+text+'". This is still a voice prototype and is not connected to your local AI model yet.';
+
+    setStatus("演示回复", "thinking");
+    $("hint").textContent = "目前使用预设演示回复";
+    setTimeout(() => {
+      addMessage(reply, "ai");
+      speak(reply, lang);
+      if (!state.speaking) {
+        setStatus("原型待命");
+        $("hint").textContent = "演示完成。连接 AI 后才能进行真正对话。";
+      }
+      state.busy = false;
+    }, 650);
+  }
+
+  function stopListening() {
+    state.listening = false;
+    if (state.recognition) {
+      try { state.recognition.stop(); } catch (_) {}
+    }
+    state.recognition = null;
+    $("micLabel").textContent = "开始聆听";
+  }
+
+  function startListening() {
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Recognition) {
+      setStatus("此浏览器不支持语音识别");
+      $("hint").textContent = "请稍后使用支持语音识别的浏览器，或先使用界面预览。";
+      addMessage("浏览器没有提供 SpeechRecognition。当前原型无法在这里采集语音。", "note");
+      return;
+    }
+    if (state.listening) return;
+
+    stopSpeech();
+    const rec = new Recognition();
+    state.recognition = rec;
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = $("language").value==="auto" ? "zh-CN" : $("language").value;
+    state.listening = true;
+    state.finalText = "";
+    state.interim = "";
+    $("micLabel").textContent = "停止聆听";
+    setStatus("正在聆听…", "listening");
+    $("hint").textContent = "请开始说话；目前每次识别使用一种主要语言";
+
+    let currentBubble = null;
+    rec.onresult = event => {
+      let interim = "";
+      let finalChunk = "";
+      for (let i=event.resultIndex; i<event.results.length; i++) {
+        const part = event.results[i][0].transcript;
+        if (event.results[i].isFinal) finalChunk += part;
+        else interim += part;
+      }
+      state.interim = interim;
+      if (finalChunk.trim()) {
+        state.finalText += (state.finalText ? " " : "") + finalChunk.trim();
+        if (currentBubble) currentBubble.remove();
+        currentBubble = addMessage(state.finalText, "user");
+      } else {
+        if (currentBubble) currentBubble.remove();
+        if (interim.trim()) currentBubble = addMessage(interim, "note");
+      }
+
+      // 识别到用户说话时停止 AI 播放，提供基本的打断体验。
+      if (state.speaking) stopSpeech();
+    };
+    rec.onerror = event => {
+      if (event.error !== "no-speech" && event.error !== "aborted") {
+        setStatus("麦克风或语音识别遇到问题");
+        $("hint").textContent = "请检查浏览器麦克风权限和网络连接。";
+      }
+    };
+    rec.onend = () => {
+      state.listening = false;
+      state.recognition = null;
+      $("micLabel").textContent = "开始聆听";
+      const text = state.finalText.trim();
+      if (text) {
+        const lang = selectedLanguage(text);
+        addMessage("识别语言（估计）：" + languageName(lang), "note");
+        if (!state.busy) {
+          state.busy = true;
+          demoReply(text, lang);
+        }
+      } else if (!state.speaking) {
+        setStatus("原型待命");
+      }
+    };
+    try { rec.start(); }
+    catch (_) {
+      state.listening = false;
+      state.recognition = null;
+      $("micLabel").textContent = "开始聆听";
+      setStatus("无法启动麦克风");
+      $("hint").textContent = "请检查权限，或重新打开本页面。";
+    }
+  }
+
+  $("micBtn").addEventListener("click", () => {
+    if (state.listening) stopListening();
+    else startListening();
+  });
+
+  $("endBtn").addEventListener("click", () => {
+    stopListening();
+    stopSpeech();
+    state.busy = false;
+    setStatus("通话已结束");
+    $("hint").textContent = "再次点击麦克风即可重新体验";
+    $("micLabel").textContent = "开始聆听";
+  });
+
+  $("speakerBtn").addEventListener("click", () => {
+    state.speaker = !state.speaker;
+    $("speakerLabel").textContent = state.speaker ? "语音播放开" : "语音播放关";
+    $("speakerBtn").textContent = state.speaker ? "🔊" : "🔇";
+    if (!state.speaker) stopSpeech();
+  });
+
+  $("modeBtn").addEventListener("click", () => {
+    state.compact = !state.compact;
+    $("transcriptPanel").classList.toggle("hidden", state.compact);
+    $("modeBtn").textContent = state.compact ? "显示文字记录" : "切换简洁模式";
+    $("hint").textContent = state.compact
+      ? "简洁模式已开启；点击“显示文字记录”查看对话"
+      : "文字记录模式已开启";
+  });
+
+  $("settingsBtn").addEventListener("click", () => {
+    addMessage("语音设置：选择语言、切换文字显示或关闭语音播放。真正的本地模型连接尚未配置。", "note");
+    $("language").focus();
+  });
+
+  $("language").addEventListener("change", () => {
+    if (state.listening) {
+      stopListening();
+      setStatus("语言设置已更改");
+      $("hint").textContent = "请重新点击麦克风开始识别";
+    }
+  });
+
+  // 仅允许在 HTTPS 或 localhost 等安全环境中使用部分麦克风功能。
+  if (!window.isSecureContext) {
+    $("hint").textContent = "请通过 HTTPS 打开页面；部分语音功能需要安全连接。";
+  }
+})();
+</script>
+</body>
+</html>
