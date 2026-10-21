@@ -306,7 +306,9 @@ button:focus-visible,select:focus-visible { outline:2px solid var(--blue);outlin
     state.recognition = rec;
     rec.continuous = false;
     rec.interimResults = false;
-    rec.lang = $("language").value==="auto" ? "zh-CN" : $("language").value;
+    
+rec.lang = $("language").value === "auto" ? "ms-MY" : $("language").value;
+
     state.listening = true;
     state.finalText = "";
     state.interim = "";
