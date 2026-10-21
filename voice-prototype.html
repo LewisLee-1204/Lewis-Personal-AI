@@ -304,8 +304,8 @@ button:focus-visible,select:focus-visible { outline:2px solid var(--blue);outlin
     stopSpeech();
     const rec = new Recognition();
     state.recognition = rec;
-    rec.continuous = true;
-    rec.interimResults = true;
+    rec.continuous = false;
+    rec.interimResults = false;
     rec.lang = $("language").value==="auto" ? "zh-CN" : $("language").value;
     state.listening = true;
     state.finalText = "";
