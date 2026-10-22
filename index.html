@@ -145,7 +145,7 @@ async function reply(text){
   renderChat();
 
   try {
-    const response = await fetch('http://https://lewis.tail2ffb7c.ts.net/api/chat', {
+    const response = await fetch('https://lewis.tail2ffb7c.ts.net/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: t })
