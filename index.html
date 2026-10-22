@@ -175,7 +175,51 @@ async function reply(text){
 }
 
 $('sendBtn').onclick=()=>reply($('chatInput').value);$('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();reply($('chatInput').value)}});
-$('voiceBtn').onclick=()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('此浏览器不支持语音识别，请尝试 Safari 的听写功能');return}const r=new SR();r.lang='zh-CN';r.onresult=e=>{$('chatInput').value=e.results[0][0].transcript};r.onerror=()=>toast('语音识别暂时不可用');r.start()};
+
+$('voiceBtn').onclick = () => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SR) {
+    toast('此浏览器不支持语音识别，请尝试 Chrome 或 Edge');
+    return;
+  }
+
+  const r = new SR();
+  r.lang = 'zh-CN';
+  r.continuous = false;
+  r.interimResults = false;
+
+  $('voiceBtn').textContent = '🎙️';
+  toast('灵克 AI 正在聆听，请开始说话…');
+
+  r.onresult = async (e) => {
+    const spokenText = e.results[0][0].transcript;
+    $('chatInput').value = spokenText;
+
+    // 将识别出的语音发送给现有的本地 Qwen AI
+    await reply(spokenText);
+
+    // 朗读 AI 的最新回答
+    const lastBotMessage = [...document.querySelectorAll('#chatLog .message.bot')]
+      .pop();
+
+    if (lastBotMessage && 'speechSynthesis' in window) {
+      const answer = lastBotMessage.innerText.trim();
+      if (answer) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(answer);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 1;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+  };
+
+  r.onerror = () => toast('语音识别暂时不可用，请检查麦克风权限');
+  r.onend = () => {};
+  r.start();
+};
+
 $('exportBtn').onclick=()=>{const payload={app:'灵克 AI',version:1,exportedAt:now(),data};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const file=new File([blob],`灵克AI备份_${new Date().toISOString().replace(/[:.]/g,'-')}.json`,{type:'application/json'});if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({title:'灵克 AI 资料备份',text:'灵克 AI JSON 备份文件',files:[file]}).then(()=>toast('已打开系统分享菜单')).catch(()=>downloadBlob(blob,file.name))}else downloadBlob(blob,file.name)};
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('备份已导出；请在「文件」中确认保存')}
 $('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const parsed=JSON.parse(await f.text());const incoming=parsed.data||parsed;if(!['memories','notes','tasks','chats'].every(k=>Array.isArray(incoming[k])))throw new Error('文件结构不正确');if($('importMode').value==='replace'){if(!confirm('替换模式会覆盖本机现有资料，确定继续吗？'))return;data={memories:incoming.memories,notes:incoming.notes,tasks:incoming.tasks,chats:incoming.chats}}else{for(const k of ['memories','notes','tasks','chats']){const existing=new Set(data[k].map(x=>String(x.id)));incoming[k].forEach(x=>{if(!x.id||!existing.has(String(x.id))){data[k].push({...x,id:x.id||uid()})}})}}save();toast('导入成功');switchPage('backup')}catch(err){alert('导入失败：请确认选择的是灵克 AI 导出的有效 JSON 文件。')}})
