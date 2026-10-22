@@ -119,7 +119,61 @@ $('noteForm').addEventListener('submit',e=>{e.preventDefault();data.notes.push({
 $('taskForm').addEventListener('submit',e=>{e.preventDefault();data.tasks.push({id:uid(),title:$('taskTitle').value.trim(),due:$('taskDue').value,done:false,date:now()});if(save()){e.target.reset();toast('待办事项已添加')}})
 document.addEventListener('click',e=>{const del=e.target.closest('[data-delete]');if(del){const [kind,id]=del.dataset.delete.split(':');if(confirm('确定删除这条内容吗？')){data[kind]=data[kind].filter(x=>String(x.id)!==id);save();toast('已删除')}return}const tog=e.target.closest('[data-toggle]');if(tog){const t=data.tasks.find(x=>String(x.id)===tog.dataset.toggle);if(t){t.done=!t.done;save()}return}const chk=e.target.closest('[data-check]');if(chk){const t=data.tasks.find(x=>String(x.id)===chk.dataset.check);if(t){t.done=chk.checked;save()}return}const p=e.target.closest('[data-prompt]');if(p){$('chatInput').value=p.dataset.prompt;$('chatInput').focus()}});
 $('addTaskQuick').onclick=()=>{switchPage('tasks');$('taskTitle').focus()};
-function reply(text){const t=text.trim();if(!t)return;data.chats.push({id:uid(),role:'user',text:t,date:now()});data.chats.push({id:uid(),role:'assistant',text:'我已经收到你的内容。当前网页尚未连接真实 AI 模型，因此不能生成真正的智能回答；你可以先在「记忆」「笔记」或「待办事项」中保存资料，之后再接入本地模型。',date:now()});save();$('chatInput').value='';renderChat()}
+
+async function reply(text){
+  const t = text.trim();
+  if (!t) return;
+
+  data.chats.push({
+    id: uid(),
+    role: 'user',
+    text: t,
+    date: now()
+  });
+
+  $('chatInput').value = '';
+  save();
+  renderChat();
+
+  const loadingId = uid();
+  data.chats.push({
+    id: loadingId,
+    role: 'assistant',
+    text: '灵克 AI 正在思考，请稍候…',
+    date: now()
+  });
+  renderChat();
+
+  try {
+    const response = await fetch('http://100.118.206.51:5000/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: t })
+    });
+
+    if (!response.ok) {
+      throw new Error('HTTP ' + response.status);
+    }
+
+    const result = await response.json();
+    const answer = result.reply || result.error || '暂时没有收到回复。';
+
+    const item = data.chats.find(x => String(x.id) === String(loadingId));
+    if (item) item.text = answer;
+
+    save();
+    renderChat();
+  } catch (error) {
+    const item = data.chats.find(x => String(x.id) === String(loadingId));
+    if (item) {
+      item.text = '暂时无法连接灵克 AI。请确认 Windows 后端正在运行，并检查网络连接。';
+    }
+    save();
+    renderChat();
+    console.error('Lingke AI connection error:', error);
+  }
+}
+
 $('sendBtn').onclick=()=>reply($('chatInput').value);$('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();reply($('chatInput').value)}});
 $('voiceBtn').onclick=()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('此浏览器不支持语音识别，请尝试 Safari 的听写功能');return}const r=new SR();r.lang='zh-CN';r.onresult=e=>{$('chatInput').value=e.results[0][0].transcript};r.onerror=()=>toast('语音识别暂时不可用');r.start()};
 $('exportBtn').onclick=()=>{const payload={app:'灵克 AI',version:1,exportedAt:now(),data};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const file=new File([blob],`灵克AI备份_${new Date().toISOString().replace(/[:.]/g,'-')}.json`,{type:'application/json'});if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({title:'灵克 AI 资料备份',text:'灵克 AI JSON 备份文件',files:[file]}).then(()=>toast('已打开系统分享菜单')).catch(()=>downloadBlob(blob,file.name))}else downloadBlob(blob,file.name)};
