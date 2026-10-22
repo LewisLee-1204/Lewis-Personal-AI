@@ -262,25 +262,59 @@ button:focus-visible,select:focus-visible { outline:2px solid var(--blue);outlin
   }
 
   // 当前是界面演示回复，不是 Qwen 或在线 AI 生成的答案。
-  function demoReply(text, lang) {
-    const reply = lang==="zh-CN"
-      ? "我听到了你说：“"+text+"”。目前我还处于语音原型阶段，尚未连接你的本地 Qwen AI。等接通模型后，我就能真正理解问题并回答你。"
-      : lang==="ms-MY"
-      ? "Saya dengar: “"+text+"”. Ini masih prototaip dan belum disambungkan kepada model AI tempatan anda."
-      : 'I heard you say: "'+text+'". This is still a voice prototype and is not connected to your local AI model yet.';
+  
+  async function demoReply(text, lang) {
+    setStatus("正在连接本地 Qwen AI…", "thinking");
+    $("hint").textContent = "正在思考，请稍候…";
 
-    setStatus("演示回复", "thinking");
-    $("hint").textContent = "目前使用预设演示回复";
-    setTimeout(() => {
-      addMessage(reply, "ai");
-      speak(reply, lang);
-      if (!state.speaking) {
-        setStatus("原型待命");
-        $("hint").textContent = "演示完成。连接 AI 后才能进行真正对话。";
+    try {
+      const response = await fetch(
+        "https://lewis.tail2ffb7c.ts.net/api/chat",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: text,
+            text: text,
+            prompt: text
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("API 请求失败：" + response.status);
       }
+
+      const data = await response.json();
+      const reply = data.reply || data.response || data.message;
+
+      if (typeof reply !== "string" || !reply.trim()) {
+        throw new Error("没有从 API 收到有效回答");
+      }
+
+      addMessage(reply, "ai");
+      $("hint").textContent = "回答来自你的本地 Qwen AI";
+      setStatus("本地 AI 已回答", "thinking");
+      speak(reply, lang);
+
+      if (!state.speaker || !("speechSynthesis" in window)) {
+        setStatus("对话完成");
+        $("hint").textContent = "点击麦克风，继续和灵克 AI 对话";
+      }
+    } catch (error) {
+      console.error("灵克 AI 语音错误：", error);
+      const errorText =
+        "暂时无法连接本地 Qwen AI。请确认电脑上的 Ollama、Flask 和 Tailscale 服务都在运行。";
+      addMessage(errorText, "ai");
+      setStatus("连接失败");
+      $("hint").textContent = "请检查本地 AI 服务和网络连接";
+    } finally {
       state.busy = false;
-    }, 650);
+    }
   }
+
 
   function stopListening() {
     state.listening = false;
