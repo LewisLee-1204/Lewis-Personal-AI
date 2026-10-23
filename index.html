@@ -129,6 +129,60 @@ body{overscroll-behavior:none}
 main.center > section.section:not(.active) { display: none !important; }
 main.center > section#page-chat.section:not(.active) { display: none !important; }
 
+
+/* 聊天区域加长：让对话历史填满输入框上方的整个可用高度 */
+#page-chat.section.active {
+  height: 100% !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+#page-chat > .panel {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding-bottom: 104px !important;
+}
+#page-chat > .panel > h3 {
+  flex: 0 0 auto !important;
+}
+#page-chat #chatLog {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0 !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  margin: 8px 0 0 !important;
+  padding-bottom: 18px !important;
+}
+#page-chat .chatbox {
+  position: absolute !important;
+  left: 14px !important;
+  right: 14px !important;
+  bottom: 14px !important;
+  flex: 0 0 auto !important;
+}
+#page-chat .attachment-preview {
+  position: absolute !important;
+  left: 14px !important;
+  right: 14px !important;
+  bottom: 90px !important;
+}
+@media (max-width: 700px) {
+  #page-chat > .panel { padding: 12px 10px 88px !important; }
+  #page-chat .chatbox { left: 8px !important; right: 8px !important; bottom: 8px !important; }
+  #page-chat .attachment-preview { left: 8px !important; right: 8px !important; bottom: 76px !important; }
+}
+
 </style>
 
 </head>
