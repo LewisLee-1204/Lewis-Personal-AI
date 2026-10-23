@@ -17,6 +17,32 @@
 @media(max-width:700px){.topbar{padding:9px 12px;gap:8px;min-height:66px;flex-wrap:wrap}.brand{min-width:0;flex:1}.logo{width:43px;height:43px;font-size:24px}.brand-name{font-size:22px}.brand-sub{font-size:9px;letter-spacing:1px}.search{order:3;flex-basis:100%;max-width:none}.search input{height:42px}.top-actions .icon-btn:first-child{display:none}.layout{display:flex;flex-direction:column;padding:9px;gap:10px}.sidebar{display:block;overflow-x:auto;white-space:nowrap;order:0}.sidebar nav{display:flex;gap:7px}.nav-btn{width:auto;display:inline-flex;padding:10px 12px;min-height:42px;font-size:13px;gap:7px;border-radius:13px}.nav-btn .nav-icon{font-size:17px;width:auto}.about{display:none}.center{order:1}.rightbar{order:2;display:flex}.hero{min-height:200px;padding:20px 14px;gap:7px;border-radius:17px}.hero-bot{min-width:75px;width:28%}.hero-bot img{max-width:190px}.hero h1{font-size:clamp(27px,8vw,40px);letter-spacing:0}.hero p{letter-spacing:1px;font-size:12px}.pill{padding:5px 7px;font-size:10px}.welcome .avatar{flex-basis:40px;height:40px;font-size:21px}.bubble{font-size:14px;padding:12px}.quick-grid{gap:7px}.quick{padding:10px 8px;gap:8px}.quick .qicon{width:34px;height:34px;font-size:18px}.quick strong{font-size:12px}.quick small{font-size:10px}.panel{padding:13px}.rightbar{gap:10px}.tool-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.tool{font-size:11px;padding:10px 3px}.tool span{font-size:20px}.date-panel{display:grid;grid-template-columns:1fr;gap:4px}.section-title{font-size:21px}.chatbox{border-radius:17px}.chatbox textarea{min-width:0}.suggestions{gap:6px}.suggestions button{font-size:11px;padding:8px 10px}}
 @media(max-width:390px){.hero{padding:16px 10px}.hero-bot{min-width:65px}.hero-bot img{max-width:150px}.hero h1{font-size:26px}.quick-grid{grid-template-columns:1fr 1fr}.tool-grid{grid-template-columns:1fr 1fr}.nav-btn{padding:9px}.top-actions{gap:4px}.top-actions .icon-btn{width:38px;height:38px}}
 </style>
+
+<style id="lingke-chat-layout-fix">
+/* Lingke AI: real chat-first layout override */
+#page-chat .hero,
+#page-chat .welcome,
+#page-chat .quick-grid,
+#page-chat .suggestions { display:none !important; }
+.layout { min-height:calc(100vh - 82px); height:calc(100vh - 82px); box-sizing:border-box; }
+.center { height:100%; min-height:0; gap:0; }
+#page-chat { height:100%; min-height:0; display:flex; flex-direction:column; }
+#page-chat .panel { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; margin:0; }
+#page-chat .panel > h3 { flex:0 0 auto; }
+#page-chat #chatLog { flex:1 1 auto; min-height:0; overflow-y:auto; }
+#page-chat .chatbox { flex:0 0 auto; position:sticky; bottom:0; z-index:5; background:#07152ef5; }
+.rightbar { align-self:start; }
+@media(max-width:1050px){ .layout{height:auto;min-height:calc(100vh - 82px)} .center{height:auto;min-height:70vh} #page-chat{min-height:70vh} #page-chat .panel{min-height:65vh} }
+@media(max-width:700px){ .layout{display:flex;flex-direction:column;height:auto;padding:8px} .center{order:1;min-height:72vh} .rightbar{order:2;display:flex;flex-direction:column} .sidebar{order:0} #page-chat .panel{min-height:72vh} }
+
+/* 附件上传控件 */
+.attachment-preview{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;padding:10px 14px;border:1px solid #24558a;border-radius:14px;background:rgba(13,36,70,.92);color:#dcecff;font-size:14px}
+.attachment-preview[hidden]{display:none!important}
+.attachment-preview .file-remove{border:0;background:transparent;color:#9dbce5;cursor:pointer;font-size:18px;margin-left:auto}
+#fileBtn{font-size:25px;font-weight:400}
+#fileBtn:hover{background:#14345e;color:#fff}
+</style>
+
 </head>
 <body>
 <header class="topbar">
@@ -49,7 +75,7 @@
         <button class="quick" data-prompt="帮我规划计划"><span class="qicon">☑</span><span><strong>规划计划</strong><small>行程、目标、步骤</small></span></button>
         <button class="quick" data-prompt="帮我分析数据"><span class="qicon">▥</span><span><strong>分析数据</strong><small>报表、趋势、建议</small></span></button>
       </div>
-      <div class="panel"><h3>💬 与灵克对话 <span class="hint">演示模式</span></h3><div id="chatLog" class="chat-log"><div class="message bot">目前我是网页演示版，能帮你保存和整理资料；尚未连接真正的 AI 模型。之后可以再接入本地 Qwen 模型。</div></div><div class="chatbox"><button class="attach" id="voiceBtn" title="语音输入">🎙</button><textarea id="chatInput" rows="1" placeholder="输入你的问题…"></textarea><button class="send" id="sendBtn" aria-label="发送">➤</button></div><div class="suggestions"><button data-prompt="帮我规划一周的工作计划">帮我规划一周的工作计划</button><button data-prompt="总结这份文件">总结这份文件</button><button data-prompt="帮我写一封邮件">帮我写一封邮件</button><button data-prompt="分析这组数据">分析这组数据</button><button data-prompt="给我一些创意点子">给我一些创意点子</button></div></div>
+      <div class="panel"><h3>💬 与灵克对话 <span class="hint">演示模式</span></h3><div id="chatLog" class="chat-log"><div class="message bot">目前我是网页演示版，能帮你保存和整理资料；尚未连接真正的 AI 模型。之后可以再接入本地 Qwen 模型。</div></div><div id="attachmentPreview" class="attachment-preview" hidden></div><div class="chatbox"><button class="attach" id="fileBtn" type="button" title="上传文件" aria-label="上传文件">＋</button><input id="chatFileInput" type="file" accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.csv,.png,.jpg,.jpeg,.webp,.gif" hidden><button class="attach" id="voiceBtn" title="语音输入">🎙</button><textarea id="chatInput" rows="1" placeholder="输入你的问题，或先点击＋上传文件…"></textarea><button class="send" id="sendBtn" aria-label="发送">➤</button></div><div class="suggestions"><button data-prompt="帮我规划一周的工作计划">帮我规划一周的工作计划</button><button data-prompt="总结这份文件">总结这份文件</button><button data-prompt="帮我写一封邮件">帮我写一封邮件</button><button data-prompt="分析这组数据">分析这组数据</button><button data-prompt="给我一些创意点子">给我一些创意点子</button></div></div>
     </section>
 
     <section id="page-memories" class="section">
@@ -121,8 +147,20 @@ document.addEventListener('click',e=>{const del=e.target.closest('[data-delete]'
 $('addTaskQuick').onclick=()=>{switchPage('tasks');$('taskTitle').focus()};
 
 async function reply(text){
-  const t = text.trim();
+  let t = text.trim();
+  if (selectedChatFile) {
+    const f = selectedChatFile;
+    const isPlain = /\.(txt|csv)$/i.test(f.name);
+    if (isPlain) {
+      try { const content = await f.text(); t = (t ? t + '\n\n' : '') + '我上传了文件：' + f.name + '\n以下是文件内容，请根据内容回答：\n' + content.slice(0, 50000); }
+      catch (_) { t = (t ? t + '\n\n' : '') + '我选择了文件：' + f.name + '，但浏览器无法读取其内容。'; }
+    } else {
+      t = (t ? t + '\n\n' : '') + '我选择了文件：' + f.name + '。请告知我：当前网页已选择该文件，但 PDF、Word、Excel 和图片的实际解析/视觉分析接口尚未接通。';
+    }
+  }
   if (!t) return;
+  const fileToClear = selectedChatFile;
+  selectedChatFile = null; chatFileInput.value = ''; attachmentPreview.hidden = true; attachmentPreview.innerHTML = '';
 
   data.chats.push({
     id: uid(),
@@ -175,6 +213,23 @@ async function reply(text){
 }
 
 $('sendBtn').onclick=()=>reply($('chatInput').value);$('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();reply($('chatInput').value)}});
+
+// 聊天附件：打开文件选择器，并在发送前显示已选择的文件。
+let selectedChatFile = null;
+const chatFileInput = $('chatFileInput');
+const attachmentPreview = $('attachmentPreview');
+$('fileBtn').onclick = () => chatFileInput.click();
+chatFileInput.addEventListener('change', () => {
+  selectedChatFile = chatFileInput.files && chatFileInput.files[0] ? chatFileInput.files[0] : null;
+  if (!selectedChatFile) { attachmentPreview.hidden = true; attachmentPreview.innerHTML = ''; return; }
+  const size = selectedChatFile.size < 1024*1024 ? (selectedChatFile.size/1024).toFixed(1)+' KB' : (selectedChatFile.size/1024/1024).toFixed(2)+' MB';
+  attachmentPreview.innerHTML = '<span>📎</span><span><strong></strong><br><small></small></span><button type="button" class="file-remove" title="移除文件" aria-label="移除文件">×</button>';
+  attachmentPreview.querySelector('strong').textContent = selectedChatFile.name;
+  attachmentPreview.querySelector('small').textContent = size;
+  attachmentPreview.hidden = false;
+  attachmentPreview.querySelector('.file-remove').onclick = () => { selectedChatFile = null; chatFileInput.value = ''; attachmentPreview.hidden = true; attachmentPreview.innerHTML = ''; };
+});
+
 
 $('voiceBtn').onclick = () => {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
