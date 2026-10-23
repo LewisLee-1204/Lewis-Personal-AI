@@ -38,7 +38,6 @@
 @media(max-width:700px){ .layout{display:flex;flex-direction:column;height:auto;padding:8px} .center{order:1;min-height:72vh} .rightbar{order:2;display:flex;flex-direction:column} .sidebar{order:0} #page-chat .panel{height:72vh;min-height:520px;padding-bottom:96px} #page-chat .chatbox{left:8px;right:8px;bottom:8px} #page-chat #chatLog::-webkit-scrollbar{width:6px} }
 </style>
 
-<style id="attachment-upload-styles">
 /* 附件上传控件 */
 .attachment-preview{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;padding:10px 14px;border:1px solid #24558a;border-radius:14px;background:rgba(13,36,70,.92);color:#dcecff;font-size:14px}
 .attachment-preview[hidden]{display:none!important}
@@ -46,72 +45,44 @@
 #fileBtn{font-size:25px;font-weight:400}
 #fileBtn:hover{background:#14345e;color:#fff}
 
-</style>
-
-
-<style id="lingke-polish-layer">
-:root{scrollbar-color:#168fe8 #07152d;scrollbar-width:thin}
-*{scrollbar-width:thin;scrollbar-color:#168fe8 #07152d}
-*::-webkit-scrollbar{width:10px;height:10px}
-*::-webkit-scrollbar-track{background:linear-gradient(180deg,#061126,#0b1d3a);border:1px solid #12365f;border-radius:999px}
-*::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#35d9ff,#0878ee 65%,#344dff);border:2px solid #081832;border-radius:999px;min-height:34px;box-shadow:0 0 10px #087dff55}
-*::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#75edff,#278dff 65%,#725dff)}
-*::-webkit-scrollbar-button{height:14px;background:#0a1a35;border-radius:4px}
-html,body{width:100%;height:100%;min-height:0;margin:0;overflow:hidden}
-body{overscroll-behavior:none}
-.topbar{height:82px;min-height:82px;box-sizing:border-box}
-.layout{height:calc(100dvh - 82px);min-height:0;overflow:hidden;box-sizing:border-box;align-items:stretch}
-.sidebar,.rightbar{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:2px}
-.center{height:100%;min-height:0;overflow:hidden}
-.center>.section.active{min-height:0;min-width:0}
-.section{min-height:0}
-#page-chat.section.active{height:100%;display:flex;flex-direction:column;overflow:hidden}
-#page-chat .panel{min-height:0;flex:1 1 auto}
-#page-chat #chatLog{scrollbar-gutter:stable;scroll-behavior:smooth}
-#page-chat .chatbox{flex:0 0 auto;position:absolute;left:14px;right:14px;bottom:14px;z-index:5;min-height:68px;border-radius:25px;background:rgba(5,19,43,.97);backdrop-filter:blur(18px);box-shadow:0 8px 30px #0005,0 0 0 1px #0c4d8a}
-#page-chat .chatbox textarea{resize:none;max-height:120px;min-height:42px}
-#page-chat .suggestions{display:none}
-#page-chat .attachment-preview{position:absolute;left:14px;right:14px;bottom:90px;z-index:6;margin:0;max-height:82px;overflow:auto}
-#page-voice.section.active{height:100%;display:flex;flex-direction:column;overflow:hidden;gap:8px}
-#page-voice .section-title{flex:0 0 auto;margin:0;padding:2px 4px 8px}
-#page-voice>.panel{flex:1 1 auto;min-height:0;height:auto!important;margin:0;overflow:hidden;border-radius:22px;background:#050b19}
-#page-voice iframe{width:100%;height:100%!important;min-height:0!important;display:block;border:0;overflow:hidden;background:#050b19}
-#page-voice>.hint{display:none}
-#page-voice .panel{padding:0!important}
-/* 语音页仅让内部对话记录滚动，页面本身固定在视口内。 */
-#page-voice{overscroll-behavior:contain}
-.footer{flex:0 0 auto}
-.message{box-shadow:0 3px 12px #0002}
-.chatbox:focus-within{border-color:#36baff;box-shadow:0 0 0 3px #168fe833,0 8px 30px #0005}
-#fileBtn{width:44px;height:44px;flex:0 0 44px;border-radius:15px;color:#e9f7ff;transition:background .2s,transform .2s}
-#fileBtn:hover{transform:rotate(90deg);background:#12345d}
-.send{flex:0 0 55px;cursor:pointer;transition:transform .2s,filter .2s}
-.send:hover{filter:brightness(1.15);transform:translateY(-1px)}
-@media(max-width:1050px){
- .topbar{height:72px;min-height:72px}
- .layout{height:calc(100dvh - 72px);min-height:0;grid-template-columns:190px minmax(0,1fr);}
- .rightbar{display:none}
+/* ===== 灵克 AI 语音页：全屏融合布局优化 ===== */
+html, body { min-height:100%; }
+body { overflow:hidden; }
+.layout {
+  height:calc(100dvh - var(--topbar-height, 82px));
+  min-height:0;
+  overflow:hidden;
+  align-items:stretch;
 }
-@media(max-width:700px){
- html,body{height:100%;overflow:hidden}
- .topbar{height:64px;min-height:64px;padding:8px 10px}
- .brand-name{font-size:20px}
- .brand-sub{display:none}
- .search{max-width:none;min-width:0}
- .layout{height:calc(100dvh - 64px);display:flex;flex-direction:column;gap:8px;padding:8px;overflow:hidden}
- .sidebar{flex:0 0 auto;display:flex;flex-direction:row;overflow-x:auto;overflow-y:hidden;gap:6px;padding:0 0 4px}
- .sidebar nav{display:flex;gap:6px;min-width:max-content}
- .nav-btn{width:auto;min-width:max-content;min-height:40px;padding:8px 12px;font-size:13px}
- .sidebar .about{display:none}
- .center{flex:1 1 auto;height:auto;min-height:0;width:100%}
- #page-chat .panel{padding:12px 10px 92px}
- #page-chat .chatbox{left:8px;right:8px;bottom:8px;min-height:60px;padding:6px}
- #page-chat .chatbox textarea{font-size:15px;padding:8px 4px}
- #page-chat .send{min-width:46px;flex-basis:46px;height:46px}
- #page-chat .attachment-preview{left:8px;right:8px;bottom:76px}
- #page-voice .section-title{font-size:18px}
+main, .main, .content, .main-content { min-height:0; min-width:0; }
+.section { min-height:0; }
+#page-voice.section.active {
+  height:100%; min-height:0; display:flex; flex-direction:column;
+  gap:8px; overflow:hidden; padding:0; background:transparent;
 }
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+#page-voice .section-title { flex:0 0 auto; margin:0; padding:4px 6px 8px; }
+#page-voice > .panel {
+  flex:1 1 auto; min-height:0; height:auto!important; margin:0!important;
+  padding:0!important; overflow:hidden!important; border:0!important;
+  border-radius:0!important; box-shadow:none!important; background:transparent!important;
+}
+#page-voice iframe {
+  display:block; width:100%; height:100%!important; min-height:0!important;
+  border:0!important; border-radius:0!important; overflow:hidden; background:transparent;
+}
+#page-voice > .hint { display:none!important; }
+/* Only scroll the conversation history inside the voice prototype, not the page. */
+#page-voice { overscroll-behavior:contain; }
+@media(max-width:1050px) {
+  .layout { height:calc(100dvh - 72px); min-height:0; overflow:hidden; }
+}
+@media(max-width:700px) {
+  html,body { height:100%; overflow:hidden; }
+  .layout { height:calc(100dvh - 64px); min-height:0; overflow:hidden; }
+  #page-voice.section.active { min-height:0; }
+}
+/* ===== End voice layout optimization ===== */
+
 </style>
 
 </head>
@@ -202,7 +173,7 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);data={memories:Array.isArray(d.memories)?d.memories:[],notes:Array.isArray(d.notes)?d.notes:[],tasks:Array.isArray(d.tasks)?d.tasks:[],chats:Array.isArray(d.chats)?d.chats:[]}}}catch(e){toast('读取本机资料失败，请检查浏览器储存设置')}} 
 function save(){try{localStorage.setItem(KEY,JSON.stringify(data));renderAll();return true}catch(e){toast('保存失败：可能是浏览器储存空间不足');return false}}
-function switchPage(name){document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id==='page-'+name));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===name));if(name==='backup')$('backupInfo').textContent=`当前资料：记忆 ${data.memories.length} 条、笔记 ${data.notes.length} 条、待办 ${data.tasks.length} 项、聊天 ${data.chats.length} 条。`;document.querySelectorAll('.section').forEach(s=>{const sc=s.querySelector('.chat-log');if(sc&&name==='chat')sc.scrollTop=sc.scrollHeight})}
+function switchPage(name){document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id==='page-'+name));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===name));if(name==='backup')$('backupInfo').textContent=`当前资料：记忆 ${data.memories.length} 条、笔记 ${data.notes.length} 条、待办 ${data.tasks.length} 项、聊天 ${data.chats.length} 条。`;window.scrollTo({top:0,behavior:'smooth'})}
 function itemMarkup(kind,x){const title=x.title||x.text||'未命名';return `<div class="item"><div class="item-main"><strong>${esc(title)}</strong>${x.text&&x.title?'<div>'+esc(x.text)+'</div>':''}${x.due?'<small>截止：'+esc(x.due)+'</small>':''}<small>${esc(x.date||x.createdAt||'')}</small></div><div class="item-actions">${kind==='tasks'?`<button data-toggle="${x.id}">${x.done?'恢复':'完成'}</button>`:''}<button data-delete="${kind}:${x.id}" aria-label="删除">删除</button></div></div>`}
 function renderList(id,kind){const arr=data[kind];$(id).innerHTML=arr.length?arr.slice().reverse().map(x=>itemMarkup(kind,x)).join(''):'<div class="empty">这里还没有内容，添加第一条吧。</div>'}
 function renderTasks(){const open=data.tasks.filter(t=>!t.done);$('taskCount').textContent=`${open.length} 项未完成`;$('todayTasks').innerHTML=open.length?open.slice(0,5).map(t=>`<label class="todo-row"><input type="checkbox" data-check="${t.id}"><span class="task-text">${esc(t.title)}${t.due?'<small style="display:block;color:#829ec7;margin-top:3px">'+esc(t.due)+'</small>':''}</span></label>`).join(''):'<div class="hint">今天暂时没有未完成任务 ✨</div>';renderList('taskList','tasks')}
