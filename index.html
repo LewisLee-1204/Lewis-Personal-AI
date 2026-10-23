@@ -183,6 +183,75 @@ main.center > section#page-chat.section:not(.active) { display: none !important;
   #page-chat .attachment-preview { left: 8px !important; right: 8px !important; bottom: 76px !important; }
 }
 
+
+/* 二次检查修复：用上下定位明确拉长聊天记录区，避免被旧版 flex/height 规则压缩 */
+#page-chat.section.active {
+  position: relative !important;
+  display: block !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+#page-chat > .panel {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  padding: 18px 16px 104px !important;
+}
+#page-chat > .panel > h3 {
+  position: relative !important;
+  z-index: 2 !important;
+  margin: 0 0 8px !important;
+}
+#page-chat #chatLog {
+  position: absolute !important;
+  top: 58px !important;
+  left: 16px !important;
+  right: 16px !important;
+  bottom: 112px !important;
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+  padding: 0 12px 18px 0 !important;
+}
+#page-chat .chatbox {
+  position: absolute !important;
+  left: 14px !important;
+  right: 14px !important;
+  bottom: 14px !important;
+  z-index: 5 !important;
+  margin: 0 !important;
+}
+#page-chat #attachmentPreview {
+  position: absolute !important;
+  left: 14px !important;
+  right: 14px !important;
+  bottom: 82px !important;
+  z-index: 6 !important;
+}
+#page-chat .suggestions,
+#page-chat .quick-grid,
+#page-chat .hero {
+  display: none !important;
+}
+@media (max-width: 700px) {
+  #page-chat > .panel { padding: 12px 8px 90px !important; }
+  #page-chat #chatLog { top: 48px !important; left: 8px !important; right: 8px !important; bottom: 98px !important; }
+  #page-chat .chatbox { left: 8px !important; right: 8px !important; bottom: 8px !important; }
+  #page-chat #attachmentPreview { left: 8px !important; right: 8px !important; bottom: 74px !important; }
+}
+
 </style>
 
 </head>
