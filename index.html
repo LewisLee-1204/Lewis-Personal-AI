@@ -125,6 +125,19 @@ body{overscroll-behavior:none}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 
+
+/* 页面切换修复：聊天框只在聊天页显示，其他页面不保留聊天面板 */
+main.center > .section { display: none !important; }
+main.center > .section.active { display: flex !important; }
+main.center > #page-chat.section.active { display: flex !important; flex-direction: column; }
+main.center > #page-voice.section.active { display: flex !important; }
+main.center > #page-memories.section.active,
+main.center > #page-notes.section.active,
+main.center > #page-tasks.section.active,
+main.center > #page-files.section.active,
+main.center > #page-backup.section.active,
+main.center > #page-settings.section.active { display: block !important; }
+
 </style>
 </head>
 <body>
