@@ -24,6 +24,9 @@
 .layout { min-height:calc(100vh - 82px); height:calc(100vh - 82px); box-sizing:border-box; }
 .center { height:100%; min-height:0; gap:0; }
 #page-chat { height:100%; min-height:0; display:flex; flex-direction:column; }
+/* 修复：ID 选择器优先级高于 .section.active，导致聊天页在语音页仍可见；非活动时强制隐藏 */
+#page-chat.section:not(.active) { display:none !important; }
+#page-chat.section.active { display:flex; }
 #page-chat .panel { position:relative; flex:1 1 auto; min-height:0; height:100%; display:flex; flex-direction:column; margin:0; padding-bottom:100px; box-sizing:border-box; overflow:hidden; }
 #page-chat .panel > h3 { flex:0 0 auto; }
 #page-chat #chatLog { flex:1 1 auto; min-height:0; height:0; overflow-y:auto; overscroll-behavior:contain; padding-right:12px; scrollbar-width:thin; scrollbar-color:#2789dc #0a1a35; }
