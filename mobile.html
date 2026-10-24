@@ -771,9 +771,78 @@ $('voiceBtn').onclick = () => {
   r.start();
 };
 
-$('exportBtn').onclick=()=>{const payload={app:'灵克 AI',version:1,exportedAt:now(),data};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const file=new File([blob],`灵克AI备份_${new Date().toISOString().replace(/[:.]/g,'-')}.json`,{type:'application/json'});if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({title:'灵克 AI 资料备份',text:'灵克 AI JSON 备份文件',files:[file]}).then(()=>toast('已打开系统分享菜单')).catch(()=>downloadBlob(blob,file.name))}else downloadBlob(blob,file.name)};
-function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('备份已导出；请在「文件」中确认保存')}
-$('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const parsed=JSON.parse(await f.text());const incoming=parsed.data||parsed;if(!['memories','notes','tasks','chats'].every(k=>Array.isArray(incoming[k])))throw new Error('文件结构不正确');if($('importMode').value==='replace'){if(!confirm('替换模式会覆盖本机现有资料，确定继续吗？'))return;data={memories:incoming.memories,notes:incoming.notes,tasks:incoming.tasks,chats:incoming.chats}}else{for(const k of ['memories','notes','tasks','chats']){const existing=new Set(data[k].map(x=>String(x.id)));incoming[k].forEach(x=>{if(!x.id||!existing.has(String(x.id))){data[k].push({...x,id:x.id||uid()})}})}}save();toast('导入成功');switchPage('backup')}catch(err){alert('导入失败：请确认选择的是灵克 AI 导出的有效 JSON 文件。')}})
+// 备份导出：iPhone 优先打开系统分享表单，用户可选择“存储到文件”；其他浏览器使用下载。
+function makeBackupFile(){
+  const snapshot={memories:data.memories,notes:data.notes,tasks:data.tasks,chats:data.chats};
+  const payload={app:'灵克 AI',version:1,exportedAt:now(),data:snapshot};
+  const json=JSON.stringify(payload,null,2);
+  const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+  const name=`灵克AI备份_${stamp}.json`;
+  return {blob:new Blob([json],{type:'application/json;charset=utf-8'}),file:new File([json],name,{type:'application/json'}),name};
+}
+$('exportBtn').onclick=async()=>{
+  try{
+    const {blob,file,name}=makeBackupFile();
+    if(navigator.share&&navigator.canShare){
+      try{
+        if(navigator.canShare({files:[file]})){
+          await navigator.share({title:'灵克 AI 资料备份',text:'请选择“存储到文件”以保存 JSON 备份。',files:[file]});
+          toast('已打开分享菜单；请在菜单中选择“存储到文件”完成保存。');
+          return;
+        }
+      }catch(err){
+        // 用户关闭分享菜单时不再擅自触发第二次下载。
+        if(err&&err.name==='AbortError'){toast('已取消导出，资料没有改变。');return;}
+      }
+    }
+    downloadBlob(blob,name);
+  }catch(err){console.error('备份导出失败',err);alert('导出失败。请稍后重试，或检查浏览器是否允许下载文件。');}
+};
+function downloadBlob(blob,name){
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=name;a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),10000);
+  toast('已请求下载备份；请到浏览器下载记录或「文件」App 确认文件已保存。');
+}
+function readBackupFile(file){
+  if(file&&typeof file.text==='function')return file.text();
+  return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.onerror=()=>reject(reader.error||new Error('读取文件失败'));reader.readAsText(file);});
+}
+$('importFile').addEventListener('change',async e=>{
+  const input=e.target, f=input.files&&input.files[0];
+  if(!f)return;
+  const previous=data;
+  try{
+    if(f.size>50*1024*1024)throw new Error('备份文件超过 50 MB，暂不支持导入。');
+    const parsed=JSON.parse(await readBackupFile(f));
+    const incoming=parsed&&parsed.data?parsed.data:parsed;
+    const keys=['memories','notes','tasks','chats'];
+    if(!incoming||!keys.every(k=>Array.isArray(incoming[k])))throw new Error('备份结构不正确');
+    if(!keys.every(k=>incoming[k].every(x=>x&&typeof x==='object'&&!Array.isArray(x))))throw new Error('备份内容格式不正确');
+    if($('importMode').value==='replace'){
+      if(!confirm('替换模式会覆盖本机现有资料，确定继续吗？'))return;
+      data={memories:[],notes:[],tasks:[],chats:[]};
+      for(const k of keys)data[k]=incoming[k].map(x=>({...x,id:x.id||uid()}));
+    }else{
+      data={memories:[...previous.memories],notes:[...previous.notes],tasks:[...previous.tasks],chats:[...previous.chats]};
+      for(const k of keys){
+        const existing=new Set(data[k].map(x=>String(x.id)));
+        for(const item of incoming[k]){
+          const id=item.id?String(item.id):uid();
+          if(!existing.has(id)){data[k].push({...item,id});existing.add(id);}
+        }
+      }
+    }
+    if(!save()){data=previous;renderAll();throw new Error('本机储存失败，未能完成导入');}
+    toast('导入成功');switchPage('backup');
+  }catch(err){
+    data=previous;renderAll();console.error('灵克 AI 备份导入失败',err);
+    alert('导入失败：'+(err&&err.message?err.message:'请确认选择的是有效的灵克 AI JSON 备份文件。'));
+  }finally{
+    // 允许用户再次选择同一个文件，也包括上一次取消或失败的情况。
+    input.value='';
+  }
+});
 $('clearBtn').onclick=()=>{if(confirm('确定清除本机所有灵克 AI 资料吗？建议先导出备份。')){if(confirm('再次确认：此操作无法自动撤销，继续清除？')){data={memories:[],notes:[],tasks:[],chats:[]};save();toast('本机资料已清除')}}}
 $('globalSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){const q=e.target.value.trim().toLowerCase();if(!q)return;const hits=[];for(const k of ['memories','notes','tasks','chats'])for(const x of data[k])if(JSON.stringify(x).toLowerCase().includes(q))hits.push({kind:k,x});if(!hits.length){toast('没有找到匹配资料');return}const first=hits[0];switchPage(({memories:'memories',notes:'notes',tasks:'tasks',chats:'chat'})[first.kind]);toast(`找到 ${hits.length} 条匹配资料；已打开相关页面`)}}); 
 $('themeBtn').onclick=()=>{document.body.classList.toggle('light');if(document.body.classList.contains('light')){document.documentElement.style.setProperty('--bg','#eaf1ff');document.documentElement.style.setProperty('--panel','#fff');document.documentElement.style.setProperty('--text','#14223d');toast('浅色主题已开启')}else{document.documentElement.style.setProperty('--bg','#030b1b');document.documentElement.style.setProperty('--panel','#081936');document.documentElement.style.setProperty('--text','#f3f7ff');toast('深色主题已开启')}};
