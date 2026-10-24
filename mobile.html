@@ -883,5 +883,55 @@ load();renderAll();switchPage('chat');syncWithServer('pull');
 /* 聊天记录保持独立滚动，不改变聊天输入区与语音页面布局。 */
 #page-chat #chatLog { overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
 </style>
+
+<style id="lingke-mobile-long-list-scroll-fix-v2">
+/* Fix long-list pages: the page section owns scrolling; its panel/list must not clip it. */
+@media (max-width: 800px) {
+  html, body {
+    overscroll-behavior-y: auto !important;
+  }
+  .layout > .center {
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  .center > .section.active:not(#page-chat):not(#page-voice) {
+    display: block !important;
+    flex: 1 1 auto !important;
+    position: relative !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+    touch-action: pan-y !important;
+    padding: 0 0 max(28px, env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box !important;
+  }
+  .center > .section.active:not(#page-chat):not(#page-voice) > .section-title {
+    position: relative !important;
+    flex: 0 0 auto !important;
+  }
+  .center > .section.active:not(#page-chat):not(#page-voice) > .panel {
+    display: block !important;
+    position: relative !important;
+    inset: auto !important;
+    height: auto !important;
+    min-height: max-content !important;
+    max-height: none !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+    padding-bottom: 24px !important;
+    box-sizing: border-box !important;
+  }
+  .center > .section.active:not(#page-chat):not(#page-voice) .item-list,
+  .center > .section.active:not(#page-chat):not(#page-voice) .item-list > .item {
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+}
+</style>
+
 </body>
 </html>
