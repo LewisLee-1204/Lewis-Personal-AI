@@ -254,22 +254,6 @@ main.center > section#page-chat.section:not(.active) { display: none !important;
 
 </style>
 
-
-<style id="lingke-desktop-chat-final-fix">
-/* Desktop-only chat layout repair: keep title, history and composer in separate zones. */
-@media (min-width: 1051px) {
-  html, body { height: 100%; min-height: 0; overflow: hidden; }
-  .topbar { flex: 0 0 82px; }
-  .layout { height: calc(100vh - 82px) !important; min-height: 0 !important; overflow: hidden !important; align-items: stretch; }
-  main.center { min-height: 0 !important; height: 100% !important; overflow: hidden !important; }
-  #page-chat.section.active { position: relative !important; display: flex !important; flex-direction: column !important; height: 100% !important; min-height: 0 !important; overflow: hidden !important; }
-  #page-chat > .panel { position: relative !important; inset: auto !important; display: flex !important; flex-direction: column !important; flex: 1 1 auto !important; width: 100% !important; height: auto !important; min-height: 0 !important; margin: 0 !important; padding: 14px 16px 104px !important; box-sizing: border-box !important; overflow: hidden !important; }
-  #page-chat > .panel > h3 { position: relative !important; inset: auto !important; flex: 0 0 auto !important; margin: 0 0 10px !important; line-height: 1.35 !important; }
-  #page-chat #chatLog { position: relative !important; inset: auto !important; display: block !important; flex: 1 1 auto !important; width: 100% !important; height: auto !important; min-height: 0 !important; max-height: none !important; margin: 0 !important; padding: 6px 12px 18px 0 !important; box-sizing: border-box !important; overflow-x: hidden !important; overflow-y: auto !important; }
-  #page-chat .chatbox { position: absolute !important; left: 14px !important; right: 14px !important; bottom: 14px !important; z-index: 10 !important; margin: 0 !important; }
-  #page-chat #attachmentPreview { position: absolute !important; left: 14px !important; right: 14px !important; bottom: 88px !important; z-index: 11 !important; }
-}
-</style>
 </head>
 <body>
 <header class="topbar">
@@ -346,7 +330,49 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.style.display='block'
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);data={memories:Array.isArray(d.memories)?d.memories:[],notes:Array.isArray(d.notes)?d.notes:[],tasks:Array.isArray(d.tasks)?d.tasks:[],chats:Array.isArray(d.chats)?d.chats:[]}}}catch(e){toast('读取本机资料失败，请检查浏览器储存设置')}} 
-function save(){try{localStorage.setItem(KEY,JSON.stringify(data));renderAll();return true}catch(e){toast('保存失败：可能是浏览器储存空间不足');return false}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data));renderAll();queueCloudSync();return true}catch(e){toast('保存失败：可能是浏览器储存空间不足');return false}}
+
+// 跨设备同步：通过现有 Flask /api/sync 保存到灵克 AI 后端，本机 localStorage 继续作为离线缓存
+const SYNC_URL='https://lewis.tail2ffb7c.ts.net/api/sync';
+let syncTimer=null, syncBusy=false, syncAgain=false, syncReady=false;
+function mergeRecords(a,b){
+  const out=new Map();
+  [...(Array.isArray(a)?a:[]),...(Array.isArray(b)?b:[])].forEach(x=>{
+    if(!x||typeof x!=='object')return;
+    const key=String(x.id??('legacy:'+JSON.stringify(x)));
+    out.set(key,{...(out.get(key)||{}),...x});
+  });
+  return [...out.values()];
+}
+function mergeData(remote,local){
+  const merged={};
+  for(const k of ['memories','notes','tasks','chats']) merged[k]=mergeRecords(remote?.[k],local?.[k]);
+  return merged;
+}
+async function syncWithServer(mode='merge'){
+  if(syncBusy){syncAgain=true;return;}
+  syncBusy=true;
+  try{
+    if(mode==='pull'){
+      const res=await fetch(SYNC_URL,{method:'GET',cache:'no-store'});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      const remote=await res.json();
+      data=mergeData(remote,data);
+      localStorage.setItem(KEY,JSON.stringify(data));
+      renderAll();
+    }
+    const push=await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    if(!push.ok)throw new Error('HTTP '+push.status);
+    syncReady=true;
+  }catch(e){
+    syncReady=false;
+    console.warn('灵克 AI 跨设备同步暂不可用：',e);
+  }finally{
+    syncBusy=false;
+    if(syncAgain){syncAgain=false;syncWithServer('merge');}
+  }
+}
+function queueCloudSync(){if(syncTimer)clearTimeout(syncTimer);syncTimer=setTimeout(()=>syncWithServer('merge'),900)}
 function switchPage(name){
   document.querySelectorAll('main.center > .section').forEach(s=>{
     const isCurrent = s.id === 'page-' + name;
@@ -510,7 +536,7 @@ $('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if
 $('clearBtn').onclick=()=>{if(confirm('确定清除本机所有灵克 AI 资料吗？建议先导出备份。')){if(confirm('再次确认：此操作无法自动撤销，继续清除？')){data={memories:[],notes:[],tasks:[],chats:[]};save();toast('本机资料已清除')}}}
 $('globalSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){const q=e.target.value.trim().toLowerCase();if(!q)return;const hits=[];for(const k of ['memories','notes','tasks','chats'])for(const x of data[k])if(JSON.stringify(x).toLowerCase().includes(q))hits.push({kind:k,x});if(!hits.length){toast('没有找到匹配资料');return}const first=hits[0];switchPage(({memories:'memories',notes:'notes',tasks:'tasks',chats:'chat'})[first.kind]);toast(`找到 ${hits.length} 条匹配资料；已打开相关页面`)}}); 
 $('themeBtn').onclick=()=>{document.body.classList.toggle('light');if(document.body.classList.contains('light')){document.documentElement.style.setProperty('--bg','#eaf1ff');document.documentElement.style.setProperty('--panel','#fff');document.documentElement.style.setProperty('--text','#14223d');toast('浅色主题已开启')}else{document.documentElement.style.setProperty('--bg','#030b1b');document.documentElement.style.setProperty('--panel','#081936');document.documentElement.style.setProperty('--text','#f3f7ff');toast('深色主题已开启')}};
-load();renderAll();switchPage('chat');
+load();renderAll();switchPage('chat');syncWithServer('pull');
 })();
 </script>
 </body>
