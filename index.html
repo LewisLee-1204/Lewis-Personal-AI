@@ -123,21 +123,222 @@ body{overscroll-behavior:none}
  #page-chat .attachment-preview{left:8px;right:8px;bottom:76px}
  #page-voice .section-title{font-size:18px}
 }
-/* Mobile header fix: put search on its own row so it never covers navigation */
-@media(max-width:700px){
- .topbar{position:relative!important;height:auto!important;min-height:0!important;max-height:none!important;flex-wrap:wrap!important;align-content:center;gap:7px 8px!important;padding:9px 12px 10px!important;overflow:visible!important}
- .topbar .brand{order:1;flex:1 1 auto;min-width:0;width:auto}
- .topbar .top-actions{order:2;flex:0 0 auto;margin-left:auto}
- .topbar .search{order:3!important;position:relative!important;display:block!important;flex:0 0 100%!important;width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;left:auto!important;right:auto!important;top:auto!important;transform:none!important;z-index:1}
- .topbar .search input{display:block;width:100%;height:40px;padding-left:42px;font-size:14px}
- .topbar .search span{top:8px;left:14px}
- .layout{height:calc(100dvh - 116px)!important;min-height:0!important;padding-top:8px!important}
-}
-@media(max-width:390px){
- .topbar{padding-left:9px!important;padding-right:9px!important}
- .layout{height:calc(100dvh - 112px)!important}
-}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+
+/* 强制单页显示：非当前页面完全隐藏 */
+main.center > section.section:not(.active) { display: none !important; }
+main.center > section#page-chat.section:not(.active) { display: none !important; }
+
+
+/* 聊天区域加长：让对话历史填满输入框上方的整个可用高度 */
+#page-chat.section.active {
+  height: 100% !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+#page-chat > .panel {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding-bottom: 104px !important;
+}
+#page-chat > .panel > h3 {
+  flex: 0 0 auto !important;
+}
+#page-chat #chatLog {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0 !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  margin: 8px 0 0 !important;
+  padding-bottom: 18px !important;
+}
+#page-chat .chatbox {
+  position: absolute !important;
+  left: 14px !important;
+  right: 14px !important;
+  bottom: 14px !important;
+  flex: 0 0 auto !important;
+}
+#page-chat .attachment-preview {
+  position: absolute !important;
+  left: 14px !important;
+  right: 14px !important;
+  bottom: 90px !important;
+}
+@media (max-width: 700px) {
+  #page-chat > .panel { padding: 12px 10px 88px !important; }
+  #page-chat .chatbox { left: 8px !important; right: 8px !important; bottom: 8px !important; }
+  #page-chat .attachment-preview { left: 8px !important; right: 8px !important; bottom: 76px !important; }
+}
+
+
+/* 二次检查修复：用上下定位明确拉长聊天记录区，避免被旧版 flex/height 规则压缩 */
+#page-chat.section.active {
+  position: relative !important;
+  display: block !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+#page-chat > .panel {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  padding: 18px 16px 104px !important;
+}
+#page-chat > .panel > h3 {
+  position: relative !important;
+  z-index: 2 !important;
+  margin: 0 0 8px !important;
+}
+#page-chat #chatLog {
+  position: absolute !important;
+  top: 58px !important;
+  left: 16px !important;
+  right: 16px !important;
+  bottom: 112px !important;
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+  padding: 0 12px 18px 0 !important;
+}
+#page-chat .chatbox {
+  position: absolute !important;
+  left: 14px !important;
+  right: 14px !important;
+  bottom: 14px !important;
+  z-index: 5 !important;
+  margin: 0 !important;
+}
+#page-chat #attachmentPreview {
+  position: absolute !important;
+  left: 14px !important;
+  right: 14px !important;
+  bottom: 82px !important;
+  z-index: 6 !important;
+}
+#page-chat .suggestions,
+#page-chat .quick-grid,
+#page-chat .hero {
+  display: none !important;
+}
+@media (max-width: 700px) {
+  #page-chat > .panel { padding: 12px 8px 90px !important; }
+  #page-chat #chatLog { top: 48px !important; left: 8px !important; right: 8px !important; bottom: 98px !important; }
+  #page-chat .chatbox { left: 8px !important; right: 8px !important; bottom: 8px !important; }
+  #page-chat #attachmentPreview { left: 8px !important; right: 8px !important; bottom: 74px !important; }
+}
+
+</style>
+
+
+<style id="lingke-mobile-topbar-final-fix">
+/* 手机端顶部布局最终覆盖：Logo/设置第一行，搜索框第二行，导航从下方开始 */
+@media (max-width: 700px) {
+  body > header.topbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas: "brand actions" "search search" !important;
+    align-items: center !important;
+    column-gap: 10px !important;
+    row-gap: 10px !important;
+    position: relative !important;
+    inset: auto !important;
+    transform: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 10px 12px 12px !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    z-index: 20 !important;
+  }
+  body > header.topbar > .brand {
+    grid-area: brand !important;
+    order: initial !important;
+    min-width: 0 !important;
+    width: auto !important;
+    margin: 0 !important;
+  }
+  body > header.topbar > .top-actions {
+    grid-area: actions !important;
+    order: initial !important;
+    display: flex !important;
+    position: static !important;
+    margin: 0 !important;
+    align-self: center !important;
+  }
+  body > header.topbar > label.search {
+    grid-area: search !important;
+    order: initial !important;
+    display: block !important;
+    position: relative !important;
+    inset: auto !important;
+    transform: none !important;
+    float: none !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: initial !important;
+    margin: 0 !important;
+    z-index: auto !important;
+    box-sizing: border-box !important;
+  }
+  body > header.topbar > label.search input {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 42px !important;
+    box-sizing: border-box !important;
+  }
+  body > header.topbar > label.search span { top: 10px !important; }
+  body > .layout {
+    position: relative !important;
+    inset: auto !important;
+    margin-top: 0 !important;
+    height: calc(100dvh - 150px) !important;
+    min-height: 0 !important;
+    padding-top: 8px !important;
+    box-sizing: border-box !important;
+  }
+  body > .layout > .sidebar {
+    position: relative !important;
+    inset: auto !important;
+    margin-top: 0 !important;
+    transform: none !important;
+    z-index: 1 !important;
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+  }
+}
+@media (max-width: 390px) {
+  body > header.topbar { padding-left: 9px !important; padding-right: 9px !important; }
+  body > .layout { height: calc(100dvh - 146px) !important; }
+}
 </style>
 
 </head>
@@ -217,7 +418,20 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);data={memories:Array.isArray(d.memories)?d.memories:[],notes:Array.isArray(d.notes)?d.notes:[],tasks:Array.isArray(d.tasks)?d.tasks:[],chats:Array.isArray(d.chats)?d.chats:[]}}}catch(e){toast('读取本机资料失败，请检查浏览器储存设置')}} 
 function save(){try{localStorage.setItem(KEY,JSON.stringify(data));renderAll();return true}catch(e){toast('保存失败：可能是浏览器储存空间不足');return false}}
-function switchPage(name){document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id==='page-'+name));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===name));if(name==='backup')$('backupInfo').textContent=`当前资料：记忆 ${data.memories.length} 条、笔记 ${data.notes.length} 条、待办 ${data.tasks.length} 项、聊天 ${data.chats.length} 条。`;document.querySelectorAll('.section').forEach(s=>{const sc=s.querySelector('.chat-log');if(sc&&name==='chat')sc.scrollTop=sc.scrollHeight})}
+function switchPage(name){
+  document.querySelectorAll('main.center > .section').forEach(s=>{
+    const isCurrent = s.id === 'page-' + name;
+    s.classList.toggle('active', isCurrent);
+    s.style.display = isCurrent ? (name === 'chat' || name === 'voice' ? 'flex' : 'block') : 'none';
+    s.setAttribute('aria-hidden', isCurrent ? 'false' : 'true');
+  });
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===name));
+  if(name==='backup' && $('backupInfo')) $('backupInfo').textContent=`当前资料：记忆 ${data.memories.length} 条、笔记 ${data.notes.length} 条、待办 ${data.tasks.length} 项、聊天 ${data.chats.length} 条。`;
+  document.querySelectorAll('main.center > .section').forEach(s=>{
+    const sc=s.querySelector('.chat-log');
+    if(sc && name==='chat') sc.scrollTop=sc.scrollHeight;
+  });
+}
 function itemMarkup(kind,x){const title=x.title||x.text||'未命名';return `<div class="item"><div class="item-main"><strong>${esc(title)}</strong>${x.text&&x.title?'<div>'+esc(x.text)+'</div>':''}${x.due?'<small>截止：'+esc(x.due)+'</small>':''}<small>${esc(x.date||x.createdAt||'')}</small></div><div class="item-actions">${kind==='tasks'?`<button data-toggle="${x.id}">${x.done?'恢复':'完成'}</button>`:''}<button data-delete="${kind}:${x.id}" aria-label="删除">删除</button></div></div>`}
 function renderList(id,kind){const arr=data[kind];$(id).innerHTML=arr.length?arr.slice().reverse().map(x=>itemMarkup(kind,x)).join(''):'<div class="empty">这里还没有内容，添加第一条吧。</div>'}
 function renderTasks(){const open=data.tasks.filter(t=>!t.done);$('taskCount').textContent=`${open.length} 项未完成`;$('todayTasks').innerHTML=open.length?open.slice(0,5).map(t=>`<label class="todo-row"><input type="checkbox" data-check="${t.id}"><span class="task-text">${esc(t.title)}${t.due?'<small style="display:block;color:#829ec7;margin-top:3px">'+esc(t.due)+'</small>':''}</span></label>`).join(''):'<div class="hint">今天暂时没有未完成任务 ✨</div>';renderList('taskList','tasks')}
@@ -367,7 +581,7 @@ $('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if
 $('clearBtn').onclick=()=>{if(confirm('确定清除本机所有灵克 AI 资料吗？建议先导出备份。')){if(confirm('再次确认：此操作无法自动撤销，继续清除？')){data={memories:[],notes:[],tasks:[],chats:[]};save();toast('本机资料已清除')}}}
 $('globalSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){const q=e.target.value.trim().toLowerCase();if(!q)return;const hits=[];for(const k of ['memories','notes','tasks','chats'])for(const x of data[k])if(JSON.stringify(x).toLowerCase().includes(q))hits.push({kind:k,x});if(!hits.length){toast('没有找到匹配资料');return}const first=hits[0];switchPage(({memories:'memories',notes:'notes',tasks:'tasks',chats:'chat'})[first.kind]);toast(`找到 ${hits.length} 条匹配资料；已打开相关页面`)}}); 
 $('themeBtn').onclick=()=>{document.body.classList.toggle('light');if(document.body.classList.contains('light')){document.documentElement.style.setProperty('--bg','#eaf1ff');document.documentElement.style.setProperty('--panel','#fff');document.documentElement.style.setProperty('--text','#14223d');toast('浅色主题已开启')}else{document.documentElement.style.setProperty('--bg','#030b1b');document.documentElement.style.setProperty('--panel','#081936');document.documentElement.style.setProperty('--text','#f3f7ff');toast('深色主题已开启')}};
-load();renderAll();
+load();renderAll();switchPage('chat');
 })();
 </script>
 </body>
