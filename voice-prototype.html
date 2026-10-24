@@ -122,40 +122,44 @@ button:focus-visible,select:focus-visible { outline:2px solid var(--blue);outlin
   .orb-core { width:78px;height:78px;font-size:34px; }
   .greeting { font-size:20px; }
 }
-
-/* 灵克 AI 滚动条：深色玻璃轨道 + 青蓝紫渐变滑块 */
-html {
-  scrollbar-width: thin;
-  scrollbar-color: #35bfff #09162b;
-}
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #35bfff #09162b;
-}
-*::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
-}
-*::-webkit-scrollbar-track {
-  background: linear-gradient(180deg, rgba(5,14,31,.96), rgba(13,31,59,.96));
-  border: 1px solid rgba(55,133,202,.28);
-  border-radius: 999px;
-  margin: 5px 2px;
-}
-*::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #73f0ff 0%, #26a9ff 48%, #8067ff 100%);
-  border: 2px solid #09162b;
-  border-radius: 999px;
-  min-height: 42px;
-  box-shadow: 0 0 8px rgba(40,174,255,.28);
-}
-*::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #b1f8ff 0%, #55c5ff 48%, #a99aff 100%);
-  box-shadow: 0 0 12px rgba(68,192,255,.48);
-}
-*::-webkit-scrollbar-corner { background: #071329; }
-
 </style>
+
+<style id="lingke-voice-mobile-fit">
+/* Fit the voice experience inside the iframe viewport on phones */
+html, body { width:100%; height:100%; min-height:0; margin:0; overflow:hidden; }
+body { min-height:0; }
+.app { width:100%; height:100%; min-height:0; margin:0; padding:6px 12px calc(6px + env(safe-area-inset-bottom)); overflow:hidden; }
+.app header { flex:0 0 auto; padding:4px 0 5px; }
+.logo { width:38px; height:38px; border-radius:12px; font-size:20px; }
+h1 { font-size:17px; }
+.icon-btn { width:36px; height:36px; }
+.status { flex:0 0 auto; margin-top:4px; min-height:16px; font-size:12px; }
+.orb-area { flex:1 1 auto; min-height:95px; max-height:210px; }
+.orb { width:clamp(92px, 23vw, 142px); height:clamp(92px, 23vw, 142px); }
+.orb-core { width:55%; height:55%; font-size:32px; }
+.greeting { flex:0 0 auto; font-size:19px; margin:2px 0 4px; }
+.hint { flex:0 0 auto; font-size:12px; line-height:1.35; }
+.language-row { flex:0 0 auto; margin:8px 0; }
+.language-row select { padding:8px 10px; font-size:13px; }
+.transcript { flex:0 1 auto; min-height:58px; max-height:145px; overflow:hidden; padding:9px 10px; margin:0 0 6px; }
+.transcript-top { margin-bottom:5px; }
+.messages { max-height:78px; overflow-y:auto; gap:6px; }
+.message { padding:7px 9px; font-size:12px; line-height:1.4; }
+.controls { flex:0 0 auto; gap:18px; margin-top:4px; }
+.round { width:46px; height:46px; font-size:18px; }
+.round.end, .round.main { width:54px; height:54px; font-size:21px; }
+.bottom-note { flex:0 0 auto; margin-top:4px; padding-top:0; font-size:10px; }
+@media(max-height:620px) {
+  .orb-area { min-height:72px; max-height:130px; }
+  .orb { width:88px; height:88px; }
+  .greeting { font-size:17px; }
+  .language-row { margin:5px 0; }
+  .transcript { max-height:95px; }
+  .messages { max-height:42px; }
+  .bottom-note { display:none; }
+}
+</style>
+
 </head>
 <body>
 <div class="app">
