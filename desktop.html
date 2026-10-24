@@ -539,5 +539,29 @@ $('themeBtn').onclick=()=>{document.body.classList.toggle('light');if(document.b
 load();renderAll();switchPage('chat');syncWithServer('pull');
 })();
 </script>
+
+<style id="lingke-scroll-fix-20261025">
+/* 灵克 AI 长内容滚动修复：记忆、笔记、待办、文件、备份、设置页面使用各自的纵向滚动区域。 */
+.center > .section.active:not(#page-chat):not(#page-voice) {
+  display: block !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  box-sizing: border-box !important;
+  padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
+}
+/* 有些布局规则会把 center 的子页面压成固定高度，确保滚动区域允许收缩。 */
+.layout > .center { min-height: 0 !important; }
+.center > .section.active:not(#page-chat):not(#page-voice) * {
+  overscroll-behavior-x: contain;
+}
+/* 聊天记录保持独立滚动，不改变聊天输入区与语音页面布局。 */
+#page-chat #chatLog { overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
+</style>
 </body>
 </html>
