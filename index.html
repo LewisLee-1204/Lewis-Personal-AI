@@ -363,6 +363,27 @@ body{overscroll-behavior:none}
 }
 </style>
 
+
+<style id="lingke-mobile-navigation-fix">
+/* 手机端导航修复：搜索栏不再覆盖导航按钮，导航始终可点击 */
+@media (max-width:700px){
+  .topbar{position:relative!important;top:auto!important;z-index:20!important;display:flex!important;flex-wrap:wrap!important;align-items:center!important;min-height:0!important;height:auto!important;overflow:visible!important;padding:10px 12px 12px!important;gap:8px!important}
+  .brand{order:0!important;flex:1 1 auto!important;min-width:0!important}
+  .top-actions{order:1!important;position:relative!important;z-index:22!important}
+  .search{order:2!important;position:relative!important;inset:auto!important;transform:none!important;flex:0 0 100%!important;width:100%!important;max-width:none!important;margin:0!important;z-index:21!important;pointer-events:auto!important}
+  .search input{display:block!important;width:100%!important;box-sizing:border-box!important}
+  .layout{position:relative!important;z-index:1!important;display:flex!important;flex-direction:column!important;height:auto!important;min-height:0!important;margin:0!important;padding:8px!important;gap:10px!important;overflow:visible!important}
+  .sidebar{position:relative!important;top:auto!important;left:auto!important;right:auto!important;z-index:30!important;display:block!important;width:100%!important;order:0!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;pointer-events:auto!important;touch-action:pan-x!important;background:transparent!important}
+  .sidebar nav{position:relative!important;display:flex!important;flex-wrap:nowrap!important;gap:7px!important;width:max-content!important;min-width:100%!important;pointer-events:auto!important}
+  .sidebar .nav-btn{position:relative!important;z-index:31!important;flex:0 0 auto!important;display:inline-flex!important;width:auto!important;min-height:44px!important;pointer-events:auto!important;touch-action:manipulation!important;cursor:pointer!important}
+  .center{position:relative!important;z-index:1!important;order:1!important;width:100%!important;height:auto!important;min-height:0!important;overflow:visible!important}
+  .center>.section{display:none!important;width:100%!important;min-width:0!important;box-sizing:border-box!important}
+  .center>.section.active{display:block!important}
+  .center>#page-chat.section.active{display:flex!important;flex-direction:column!important}
+  .rightbar{position:relative!important;z-index:0!important;order:2!important;width:100%!important}
+}
+</style>
+
 </head>
 <body>
 <header class="topbar">
@@ -590,6 +611,16 @@ $('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if
 $('clearBtn').onclick=()=>{if(confirm('确定清除本机所有灵克 AI 资料吗？建议先导出备份。')){if(confirm('再次确认：此操作无法自动撤销，继续清除？')){data={memories:[],notes:[],tasks:[],chats:[]};save();toast('本机资料已清除')}}}
 $('globalSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){const q=e.target.value.trim().toLowerCase();if(!q)return;const hits=[];for(const k of ['memories','notes','tasks','chats'])for(const x of data[k])if(JSON.stringify(x).toLowerCase().includes(q))hits.push({kind:k,x});if(!hits.length){toast('没有找到匹配资料');return}const first=hits[0];switchPage(({memories:'memories',notes:'notes',tasks:'tasks',chats:'chat'})[first.kind]);toast(`找到 ${hits.length} 条匹配资料；已打开相关页面`)}}); 
 $('themeBtn').onclick=()=>{document.body.classList.toggle('light');if(document.body.classList.contains('light')){document.documentElement.style.setProperty('--bg','#eaf1ff');document.documentElement.style.setProperty('--panel','#fff');document.documentElement.style.setProperty('--text','#14223d');toast('浅色主题已开启')}else{document.documentElement.style.setProperty('--bg','#030b1b');document.documentElement.style.setProperty('--panel','#081936');document.documentElement.style.setProperty('--text','#f3f7ff');toast('深色主题已开启')}};
+/* 手机端导航兜底：委托点击事件，避免移动浏览器因触控/层叠导致页面不切换 */
+document.addEventListener('click',function(e){
+  const b=e.target.closest('.sidebar .nav-btn[data-page]');
+  if(!b)return;
+  const name=b.dataset.page;
+  if(typeof switchPage==='function'){
+    switchPage(name);
+    e.preventDefault();
+  }
+},true);
 load();renderAll();
 })();
 </script>
