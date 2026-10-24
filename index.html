@@ -489,6 +489,64 @@ html, body { min-width:0; }
 }
 
 </style>
+
+<style id="lingke-layout-final-verified">
+/* Final layout normalization: keep page titles above their panels and prevent the chat panel from being pushed upward. */
+@media (min-width: 701px) {
+  html, body { width:100%; height:100%; min-height:0; overflow:hidden; }
+  header.topbar { flex:0 0 82px; height:82px; min-height:82px; box-sizing:border-box; }
+  .layout {
+    display:grid !important;
+    grid-template-columns:250px minmax(0,1fr) 280px !important;
+    gap:12px !important;
+    width:100% !important; height:calc(100dvh - 82px) !important;
+    min-height:0 !important; max-height:none !important;
+    padding:12px 14px !important; box-sizing:border-box !important;
+    align-items:stretch !important; overflow:hidden !important;
+  }
+  .layout > .sidebar, .layout > .rightbar { min-width:0; min-height:0; height:100%; overflow-y:auto; }
+  .layout > .center {
+    display:flex !important; flex-direction:column !important;
+    width:100% !important; height:100% !important; min-width:0 !important; min-height:0 !important;
+    margin:0 !important; padding:0 !important; overflow:hidden !important;
+    align-items:stretch !important; justify-content:flex-start !important;
+  }
+  .center > .section { display:none; }
+  .center > .section.active {
+    display:flex !important; flex:1 1 auto !important; flex-direction:column !important;
+    align-items:stretch !important; justify-content:flex-start !important;
+    width:100% !important; height:100% !important; min-width:0 !important; min-height:0 !important;
+    margin:0 !important; padding:0 !important; overflow:hidden !important; box-sizing:border-box !important;
+  }
+  .center > .section.active > .section-title {
+    display:block; flex:0 0 auto; width:100%; box-sizing:border-box;
+    margin:0 0 10px !important; padding:4px 4px 8px !important;
+  }
+  .center > .section.active > .panel {
+    flex:0 1 auto; width:100%; max-width:none; min-width:0;
+    margin:0 !important; box-sizing:border-box;
+  }
+  #page-chat.section.active { display:flex !important; flex-direction:column !important; }
+  #page-chat .panel {
+    display:flex !important; flex:1 1 auto !important; flex-direction:column !important;
+    width:100% !important; height:100% !important; min-height:0 !important;
+    margin:0 !important; padding:12px 14px 100px !important;
+    position:relative !important; overflow:hidden !important; box-sizing:border-box !important;
+  }
+  #page-chat .panel > h3 { flex:0 0 auto; margin-top:0; }
+  #page-chat #chatLog { display:block; flex:1 1 auto; height:0; min-height:0; overflow-y:auto; }
+  #page-chat .chatbox { position:absolute !important; left:14px !important; right:14px !important; bottom:14px !important; width:auto !important; margin:0 !important; z-index:20 !important; }
+  #page-voice.section.active { display:flex !important; flex-direction:column !important; }
+  #page-voice .voice-stage { flex:1 1 auto !important; min-height:0 !important; height:auto !important; }
+  #page-voice .voice-stage iframe { display:block; width:100%; height:100% !important; min-height:0 !important; }
+}
+/* Keep mobile layout in its own viewport; avoid inheriting desktop three-column rules. */
+@media (max-width:700px) {
+  .center > .section.active { align-items:stretch !important; justify-content:flex-start !important; }
+  .center > .section.active > .section-title { flex:0 0 auto !important; width:100% !important; margin:0 0 6px !important; }
+  .center > .section.active > .panel { width:100% !important; max-width:none !important; }
+}
+</style>
 </head>
 <body>
 <header class="topbar">
