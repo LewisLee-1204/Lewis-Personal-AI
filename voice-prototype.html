@@ -230,62 +230,55 @@ h1 { font-size:17px; }
 
 
 
-<style id="lingke-transcript-structure-fix-final">
-/* Let the transcript grow with its content instead of clipping it in a nested scroll box. */
-html, body {
-  height: auto !important;
-  min-height: 100% !important;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
+
+
+
+<style id="lingke-scrollbar-polish">
+/* Visual-only scrollbar polish: preserve native scrolling and all existing controls. */
+:root {
+  scrollbar-color: #3b6fa8 #09162a;
+  scrollbar-width: thin;
 }
-.app {
-  height: auto !important;
-  min-height: 100dvh !important;
-  overflow: visible !important;
+html, body, .app, .transcript, .messages {
+  scrollbar-color: #3b6fa8 #09162a;
+  scrollbar-width: thin;
 }
-.transcript {
-  height: auto !important;
-  min-height: 120px !important;
-  max-height: none !important;
-  overflow: visible !important;
-  flex: 0 0 auto !important;
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.app::-webkit-scrollbar,
+.transcript::-webkit-scrollbar,
+.messages::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
-.messages,
-#messages {
-  height: auto !important;
-  min-height: 70px !important;
-  max-height: none !important;
-  overflow: visible !important;
-  flex: 0 0 auto !important;
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
+.app::-webkit-scrollbar-track,
+.transcript::-webkit-scrollbar-track,
+.messages::-webkit-scrollbar-track {
+  background: rgba(5, 15, 31, 0.82);
+  border-radius: 999px;
 }
-@media (max-width: 700px) {
-  html, body {
-    height: auto !important;
-    min-height: 100% !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-  }
-  .app {
-    height: auto !important;
-    min-height: 100dvh !important;
-    overflow: visible !important;
-  }
-  .transcript {
-    min-height: 120px !important;
-    max-height: none !important;
-    overflow: visible !important;
-  }
-  .messages,
-  #messages {
-    max-height: none !important;
-    overflow: visible !important;
-  }
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+.app::-webkit-scrollbar-thumb,
+.transcript::-webkit-scrollbar-thumb,
+.messages::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4ca9ff 0%, #2363a6 100%);
+  border: 2px solid #09162a;
+  border-radius: 999px;
+  min-height: 36px;
 }
-@media (max-height: 620px) {
-  .transcript, .messages, #messages {
-    max-height: none !important;
-    overflow: visible !important;
-  }
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover,
+.app::-webkit-scrollbar-thumb:hover,
+.transcript::-webkit-scrollbar-thumb:hover,
+.messages::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #76c5ff 0%, #347fc6 100%);
+}
+html::-webkit-scrollbar-corner,
+body::-webkit-scrollbar-corner {
+  background: #09162a;
 }
 </style>
 
