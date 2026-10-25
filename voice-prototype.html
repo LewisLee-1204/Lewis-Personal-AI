@@ -167,6 +167,85 @@ h1 { font-size:17px; }
 }
 </style>
 
+
+<style id="lingke-voice-history-readable-fix">
+/* 对话记录不再限制在小框内；让整个语音页面上下滚动，便于查看旧文字。 */
+html, body {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+.app {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+  padding-bottom: 24px !important;
+}
+.transcript {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 8px 0 !important;
+  margin: 0 0 14px !important;
+}
+.transcript-top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #081329;
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 8px !important;
+}
+.messages {
+  max-height: none !important;
+  overflow: visible !important;
+  display: flex;
+  flex-direction: column;
+  gap: 10px !important;
+  padding: 0 2px 8px;
+}
+.message {
+  max-width: 100% !important;
+  font-size: 14px !important;
+  line-height: 1.65 !important;
+  padding: 12px 14px !important;
+}
+.controls {
+  margin-top: 12px !important;
+  padding-bottom: 12px;
+}
+.bottom-note {
+  margin-top: 10px !important;
+  padding-top: 8px !important;
+}
+@media (max-width: 700px) {
+  .app {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+  .orb-area {
+    flex: 0 0 auto !important;
+    min-height: 125px !important;
+    max-height: 190px !important;
+    margin: 4px 0;
+  }
+  .transcript-top {
+    position: sticky;
+    top: 0;
+  }
+  .message {
+    font-size: 14px !important;
+    line-height: 1.7 !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <div class="app">
