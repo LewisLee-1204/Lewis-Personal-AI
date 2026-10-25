@@ -575,7 +575,7 @@ html, body { min-width:0; }
   main.center > .section.active:not(#page-chat) { display:block !important; height:auto !important; max-height:none !important; min-height:0 !important; overflow:visible !important; }
 }
 </style>
-\n
+
 <style id="lingke-mobile-all-pages-scroll-fix">
 /* Mobile global scroll fix: allow the whole active page to scroll, not only Memory. */
 @media (max-width: 700px) {
@@ -618,6 +618,20 @@ html, body { min-width:0; }
   #memoryList, #noteList, #taskList, .item-list, .panel {
     touch-action: pan-y !important;
   }
+}
+</style>
+
+
+<style id="lingke-mobile-scroll-fix-v2">
+/* Final override: restore document-level vertical scrolling on iPhone for every tab. */
+@media (max-width: 700px) {
+  html { height: auto !important; min-height: 100% !important; overflow-x: hidden !important; overflow-y: auto !important; }
+  body { height: auto !important; min-height: 100% !important; overflow-x: hidden !important; overflow-y: auto !important; position: relative !important; touch-action: pan-y !important; -webkit-overflow-scrolling: touch !important; }
+  .layout { height: auto !important; min-height: 0 !important; max-height: none !important; overflow: visible !important; display: flex !important; flex-direction: column !important; align-items: stretch !important; }
+  main.center { flex: 0 0 auto !important; height: auto !important; min-height: 0 !important; max-height: none !important; overflow: visible !important; touch-action: pan-y !important; }
+  main.center > .section.active { display: block !important; height: auto !important; min-height: 0 !important; max-height: none !important; overflow: visible !important; overflow-y: visible !important; overflow-x: visible !important; touch-action: pan-y !important; padding-bottom: 32px !important; }
+  main.center > #page-chat.section.active { min-height: 65vh !important; }
+  #memoryList, #noteList, #taskList, .item-list, .panel { touch-action: pan-y !important; }
 }
 </style>
 
