@@ -168,28 +168,38 @@ h1 { font-size:17px; }
 </style>
 
 
-<style id="lingke-voice-mode-toggle-fix">
+<style id="lingke-voice-mode-toggle-fix-v2">
+/* This toolbar is a sibling of the transcript panel, so hiding the panel cannot hide the toggle. */
 .mode-toggle-row {
-  display: flex;
+  display: flex !important;
   justify-content: flex-end;
   align-items: center;
-  min-height: 38px;
-  margin: -5px 0 8px;
+  width: 100%;
+  min-height: 44px;
+  margin: 0 0 8px;
+  position: relative;
+  z-index: 20;
   flex: 0 0 auto;
 }
-.mode-toggle-row .small-btn {
-  min-height: 36px;
-  padding: 7px 13px;
-  border: 1px solid #2c4770;
+.mode-toggle-button {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 14px !important;
+  border: 1px solid #2c4770 !important;
   border-radius: 10px;
-  color: #75cfff;
-  background: #101e38;
-  font-size: 13px;
+  color: #8fcfff !important;
+  background: #101e38 !important;
+  font-size: 14px !important;
+  cursor: pointer;
 }
-.transcript.hidden { display: none !important; }
+#transcriptPanel.hidden { display: none !important; }
 @media (max-width: 700px) {
-  .mode-toggle-row { margin: 0 0 10px; }
-  .mode-toggle-row .small-btn { min-height: 40px; font-size: 14px; }
+  .mode-toggle-row { min-height: 46px; margin-bottom: 8px; }
+  .mode-toggle-button { min-height: 42px; }
 }
 </style>
 
@@ -235,8 +245,8 @@ h1 { font-size:17px; }
     </div>
   </section>
 
-  <div class="mode-toggle-row">
-    <button class="small-btn" id="modeBtn" type="button">切换简洁模式</button>
+  <div id="modeToggleRow" class="mode-toggle-row">
+    <button class="small-btn mode-toggle-button" id="modeBtn" type="button" aria-expanded="true">切换简洁模式</button>
   </div>
 
   <div class="controls">
@@ -496,11 +506,13 @@ h1 { font-size:17px; }
   });
 
   $("modeBtn").addEventListener("click", () => {
+    const panel = $("transcriptPanel");
     state.compact = !state.compact;
-    $("transcriptPanel").classList.toggle("hidden", state.compact);
+    panel.classList.toggle("hidden", state.compact);
     $("modeBtn").textContent = state.compact ? "显示文字记录" : "切换简洁模式";
+    $("modeBtn").setAttribute("aria-expanded", String(!state.compact));
     $("hint").textContent = state.compact
-      ? "简洁模式已开启；点击“显示文字记录”查看对话"
+      ? "简洁模式已开启；点击下方“显示文字记录”查看对话"
       : "文字记录模式已开启";
   });
 
