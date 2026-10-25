@@ -203,6 +203,10 @@ h1 { font-size:17px; }
 }
 </style>
 
+
+<style id="lingke-audio-fix">
+#speakerBtn { touch-action: manipulation; }
+</style>
 </head>
 <body>
 <div class="app">
@@ -275,7 +279,7 @@ h1 { font-size:17px; }
   const $ = id => document.getElementById(id);
   const state = {
     listening:false, speaking:false, compact:false, speaker:true,
-    recognition:null, interim:"", finalText:"", busy:false
+    recognition:null, interim:"", finalText:"", busy:false, lastReply:""
   };
 
   function setStatus(text, mode="") {
@@ -319,30 +323,101 @@ h1 { font-size:17px; }
     state.speaking = false;
   }
 
+  let speechRetryTimer = null;
+
   function speak(text, lang) {
-    if (!state.speaker || !("speechSynthesis" in window)) return;
-    stopSpeech();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang;
-    utterance.rate = 1;
+    if (!state.speaker) {
+      setStatus("文字回答完成");
+      $("hint").textContent = "语音播放已关闭；可点击右侧扬声器按钮开启";
+      return;
+    }
+    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+      setStatus("此浏览器不支持语音播放");
+      $("hint").textContent = "请尝试更新 iOS/Safari，或使用系统朗读功能";
+      return;
+    }
+
+    const synth = window.speechSynthesis;
+    if (speechRetryTimer) {
+      clearTimeout(speechRetryTimer);
+      speechRetryTimer = null;
+    }
+    try { synth.cancel(); } catch (_) {}
+    state.speaking = false;
+
+    const utterance = new SpeechSynthesisUtterance(String(text));
+    utterance.lang = lang || "zh-CN";
+    utterance.rate = 0.95;
     utterance.pitch = 1;
+
+    let started = false;
     utterance.onstart = () => {
+      started = true;
       state.speaking = true;
       setStatus("正在使用设备语音回答", "speaking");
-      $("hint").textContent = "你可以随时结束播放";
+      $("hint").textContent = "正在播放回答；若没有声音，请检查 iPhone 静音和音量";
     };
     utterance.onend = () => {
       state.speaking = false;
       if (!state.listening) {
-        setStatus("原型待命");
-        $("hint").textContent = "点击麦克风，再说下一句话";
+        setStatus("本地 AI 已回答");
+        $("hint").textContent = "点击麦克风，继续和灵克 AI 对话";
       }
     };
-    utterance.onerror = () => {
+    utterance.onerror = event => {
       state.speaking = false;
-      setStatus("语音播放暂不可用");
+      console.warn("Speech synthesis error:", event && event.error);
+      setStatus("语音播放失败");
+      $("hint").textContent = "请点一下扬声器按钮后重试；检查 iPhone 音量，并保持页面在前台";
     };
-    window.speechSynthesis.speak(utterance);
+
+    // Safari on iPhone can be flaky after an async network response. Retry once
+    // if the speech engine did not begin speaking.
+    const queueSpeech = () => {
+      try {
+        synth.resume();
+        synth.speak(utterance);
+      } catch (err) {
+        console.warn("Could not queue speech:", err);
+      }
+    };
+    queueSpeech();
+    speechRetryTimer = setTimeout(() => {
+      speechRetryTimer = null;
+      if (!started && !state.speaking) {
+        try {
+          synth.cancel();
+          synth.resume();
+          const retry = new SpeechSynthesisUtterance(String(text));
+          retry.lang = lang || "zh-CN";
+          retry.rate = 0.95;
+          retry.pitch = 1;
+          retry.onstart = () => {
+            state.speaking = true;
+            setStatus("正在使用设备语音回答", "speaking");
+            $("hint").textContent = "正在播放回答";
+          };
+          retry.onend = () => {
+            state.speaking = false;
+            if (!state.listening) {
+              setStatus("本地 AI 已回答");
+              $("hint").textContent = "点击麦克风，继续和灵克 AI 对话";
+            }
+          };
+          retry.onerror = event => {
+            state.speaking = false;
+            console.warn("Speech retry failed:", event && event.error);
+            setStatus("语音播放失败");
+            $("hint").textContent = "点击扬声器按钮重试，或检查 iPhone 音量与静音状态";
+          };
+          synth.speak(retry);
+        } catch (err) {
+          console.warn("Speech retry error:", err);
+          setStatus("语音播放失败");
+          $("hint").textContent = "请点一下扬声器按钮后重试";
+        }
+      }
+    }, 700);
   }
 
   // 当前是界面演示回复，不是 Qwen 或在线 AI 生成的答案。
@@ -376,6 +451,7 @@ h1 { font-size:17px; }
         throw new Error("没有从 API 收到有效回答");
       }
 
+      state.lastReply = reply;
       addMessage(reply, "ai");
       $("hint").textContent = "回答来自你的本地 Qwen AI";
       setStatus("本地 AI 已回答", "thinking");
@@ -499,10 +575,31 @@ h1 { font-size:17px; }
   });
 
   $("speakerBtn").addEventListener("click", () => {
-    state.speaker = !state.speaker;
-    $("speakerLabel").textContent = state.speaker ? "语音播放开" : "语音播放关";
-    $("speakerBtn").textContent = state.speaker ? "🔊" : "🔇";
-    if (!state.speaker) stopSpeech();
+    // Tapping the speaker button is a direct user gesture, which helps Safari
+    // resume speech playback when automatic playback was blocked.
+    if (!state.speaker) {
+      state.speaker = true;
+      $("speakerLabel").textContent = "语音播放开";
+      $("speakerBtn").textContent = "🔊";
+      if (state.lastReply) speak(state.lastReply, selectedLanguage(state.lastReply));
+      else {
+        $("hint").textContent = "语音播放已开启；下一次回答会尝试朗读";
+      }
+      return;
+    }
+    if (state.speaking) {
+      stopSpeech();
+      $("hint").textContent = "已停止语音播放";
+      return;
+    }
+    if (state.lastReply) {
+      speak(state.lastReply, selectedLanguage(state.lastReply));
+    } else {
+      state.speaker = false;
+      $("speakerLabel").textContent = "语音播放关";
+      $("speakerBtn").textContent = "🔇";
+      $("hint").textContent = "语音播放已关闭";
+    }
   });
 
   $("modeBtn").addEventListener("click", () => {
