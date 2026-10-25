@@ -227,8 +227,22 @@ h1 { font-size:17px; }
 }
 </style>
 
-<style id="lingke-transcript-expand-fix">
-/* Correct fix: remove the fixed-height inner transcript box and its nested scrollbar */
+
+
+
+<style id="lingke-transcript-structure-fix-final">
+/* Let the transcript grow with its content instead of clipping it in a nested scroll box. */
+html, body {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+.app {
+  height: auto !important;
+  min-height: 100dvh !important;
+  overflow: visible !important;
+}
 .transcript {
   height: auto !important;
   min-height: 120px !important;
@@ -245,31 +259,33 @@ h1 { font-size:17px; }
   flex: 0 0 auto !important;
 }
 @media (max-width: 700px) {
-  .transcript {
+  html, body {
     height: auto !important;
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+  .app {
+    height: auto !important;
+    min-height: 100dvh !important;
+    overflow: visible !important;
+  }
+  .transcript {
     min-height: 120px !important;
     max-height: none !important;
     overflow: visible !important;
   }
   .messages,
   #messages {
-    height: auto !important;
-    min-height: 70px !important;
     max-height: none !important;
     overflow: visible !important;
   }
 }
-/* Allow the page itself to scroll if a long conversation pushes controls downward */
-html, body {
-  height: auto !important;
-  min-height: 100% !important;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
-}
-.app {
-  height: auto !important;
-  min-height: 100vh !important;
-  overflow: visible !important;
+@media (max-height: 620px) {
+  .transcript, .messages, #messages {
+    max-height: none !important;
+    overflow: visible !important;
+  }
 }
 </style>
 
