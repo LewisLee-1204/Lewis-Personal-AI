@@ -131,117 +131,65 @@ html, body { width:100%; min-width:0; }
 }
 </style>
 
+<style id="lingke-voice-mobile-fit">
+/* Fit the voice experience inside the iframe viewport on phones */
+html, body { width:100%; height:100%; min-height:0; margin:0; overflow:hidden; }
+body { min-height:0; }
+.app { width:100%; height:100%; min-height:0; margin:0; padding:6px 12px calc(6px + env(safe-area-inset-bottom)); overflow:hidden; }
+.app header { flex:0 0 auto; padding:4px 0 5px; }
+.logo { width:38px; height:38px; border-radius:12px; font-size:20px; }
+h1 { font-size:17px; }
+.icon-btn { width:36px; height:36px; }
+.status { flex:0 0 auto; margin-top:4px; min-height:16px; font-size:12px; }
+.orb-area { flex:1 1 auto; min-height:95px; max-height:210px; }
+.orb { width:clamp(92px, 23vw, 142px); height:clamp(92px, 23vw, 142px); }
+.orb-core { width:55%; height:55%; font-size:32px; }
+.greeting { flex:0 0 auto; font-size:19px; margin:2px 0 4px; }
+.hint { flex:0 0 auto; font-size:12px; line-height:1.35; }
+.language-row { flex:0 0 auto; margin:8px 0; }
+.language-row select { padding:8px 10px; font-size:13px; }
+.transcript { flex:0 1 auto; min-height:58px; max-height:145px; overflow:hidden; padding:9px 10px; margin:0 0 6px; }
+.transcript-top { margin-bottom:5px; }
+.messages { max-height:78px; overflow-y:auto; gap:6px; }
+.message { padding:7px 9px; font-size:12px; line-height:1.4; }
+.controls { flex:0 0 auto; gap:18px; margin-top:4px; }
+.round { width:46px; height:46px; font-size:18px; }
+.round.end, .round.main { width:54px; height:54px; font-size:21px; }
+.bottom-note { flex:0 0 auto; margin-top:4px; padding-top:0; font-size:10px; }
+@media(max-height:620px) {
+  .orb-area { min-height:72px; max-height:130px; }
+  .orb { width:88px; height:88px; }
+  .greeting { font-size:17px; }
+  .language-row { margin:5px 0; }
+  .transcript { max-height:95px; }
+  .messages { max-height:42px; }
+  .bottom-note { display:none; }
+}
+</style>
 
-<style id="lingke-voice-history-6lines">
-/* Stable layout: keep the transcript readable with at least six lines visible. */
-html, body {
-  width: 100%;
-  min-width: 0;
-  min-height: 100%;
-  height: auto;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-.app {
-  width: 100%;
-  height: auto;
-  min-height: 100dvh;
-  max-width: none;
-  margin: 0;
-  padding: max(8px, env(safe-area-inset-top)) 20px calc(18px + env(safe-area-inset-bottom));
-  overflow: visible;
-}
-.transcript {
-  flex: 0 0 auto;
-  min-height: 270px;
-  max-height: none;
-  overflow: visible;
-  padding: 12px;
-  margin: 0 0 12px;
-}
-.transcript-top {
-  margin-bottom: 10px;
-}
-.messages {
+
+<style id="lingke-voice-mode-toggle-fix">
+.mode-toggle-row {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 210px;
-  max-height: min(36vh, 390px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 2px 3px 8px;
-  scrollbar-gutter: stable;
-}
-.message {
-  max-width: 100%;
-  padding: 9px 12px;
-  font-size: 14px;
-  line-height: 1.55;
-  overflow-wrap: anywhere;
-}
-.orb-area {
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 38px;
+  margin: -5px 0 8px;
   flex: 0 0 auto;
-  min-height: 120px;
-  max-height: 190px;
 }
-.orb {
-  width: clamp(100px, 15vw, 150px);
-  height: clamp(100px, 15vw, 150px);
+.mode-toggle-row .small-btn {
+  min-height: 36px;
+  padding: 7px 13px;
+  border: 1px solid #2c4770;
+  border-radius: 10px;
+  color: #75cfff;
+  background: #101e38;
+  font-size: 13px;
 }
-.orb-core {
-  width: 56%;
-  height: 56%;
-  font-size: 32px;
-}
-.status { margin-top: 8px; }
-.language-row { margin: 10px 0 12px; }
-.controls { flex: 0 0 auto; margin-top: 10px; }
-.bottom-note { margin-top: 10px; padding-top: 6px; }
+.transcript.hidden { display: none !important; }
 @media (max-width: 700px) {
-  .app {
-    min-height: 100dvh;
-    padding: max(8px, env(safe-area-inset-top)) 12px calc(18px + env(safe-area-inset-bottom));
-  }
-  .app header { flex: 0 0 auto; padding: 4px 0 8px; }
-  .logo { width: 40px; height: 40px; font-size: 21px; }
-  .icon-btn { width: 40px; height: 40px; }
-  .status { margin-top: 8px; min-height: 18px; }
-  .orb-area {
-    min-height: 100px;
-    max-height: 155px;
-  }
-  .orb { width: clamp(96px, 27vw, 132px); height: clamp(96px, 27vw, 132px); }
-  .orb-core { font-size: 29px; }
-  .greeting { font-size: 19px; margin: 2px 0 4px; }
-  .hint { font-size: 12px; line-height: 1.4; }
-  .language-row { margin: 8px 0 10px; }
-  .transcript {
-    min-height: 285px;
-    padding: 10px;
-    margin-bottom: 10px;
-  }
-  .transcript-top { margin-bottom: 8px; }
-  .transcript-title { font-size: 14px; }
-  .small-btn { font-size: 12px; }
-  .messages {
-    min-height: 220px;
-    max-height: min(34vh, 420px);
-    gap: 8px;
-  }
-  .message { font-size: 14px; line-height: 1.6; padding: 9px 10px; }
-  .controls { gap: 20px; margin-top: 8px; }
-  .round { width: 48px; height: 48px; }
-  .round.end, .round.main { width: 58px; height: 58px; }
-  .bottom-note { margin-top: 10px; }
-}
-@media (max-height: 700px) {
-  .orb-area { min-height: 82px; max-height: 115px; }
-  .orb { width: 88px; height: 88px; }
-  .orb-core { font-size: 26px; }
-  .transcript { min-height: 240px; }
-  .messages { min-height: 180px; max-height: 32vh; }
-  .bottom-note { margin-top: 6px; }
+  .mode-toggle-row { margin: 0 0 10px; }
+  .mode-toggle-row .small-btn { min-height: 40px; font-size: 14px; }
 }
 </style>
 
@@ -280,12 +228,16 @@ html, body {
   <section class="transcript" id="transcriptPanel">
     <div class="transcript-top">
       <span class="transcript-title">💬 对话记录</span>
-      <button class="small-btn" id="modeBtn">切换简洁模式</button>
+      
     </div>
     <div class="messages" id="messages" aria-live="polite">
       <div class="message note">对话记录会显示在这里</div>
     </div>
   </section>
+
+  <div class="mode-toggle-row">
+    <button class="small-btn" id="modeBtn" type="button">切换简洁模式</button>
+  </div>
 
   <div class="controls">
     <div class="control">
