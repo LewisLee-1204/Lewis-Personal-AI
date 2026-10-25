@@ -28,6 +28,11 @@
 #page-voice>.hint{display:none!important}
 #page-voice.voice-fullscreen, #page-voice .voice-stage{overscroll-behavior:none}
 @media(max-width:700px){#page-voice .voice-page-title{padding:4px 2px 8px!important;gap:8px;font-size:20px}#page-voice .voice-title-icon{width:34px;height:34px;font-size:20px}#page-voice .voice-title-sub{display:none}}
+
+/* 灵克 AI 多聊天会话：沿用现有主题，不改动整体布局 */
+#chatSessionList .chat-session{flex:0 0 auto;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid var(--border,#24466f);background:var(--panel,#0b1c38);color:var(--text,#f3f7ff);padding:7px 10px;border-radius:10px;cursor:pointer;font-size:12px}
+#chatSessionList .chat-session.active{background:linear-gradient(110deg,#087bd8,#633dff);border-color:#28a8ff;color:#fff}
+#newChatBtn{border:1px solid #2188d8;background:linear-gradient(110deg,#087bd8,#633dff);color:#fff;cursor:pointer;font-weight:600}
 </style>
 
 <style id="lingke-chat-layout-fix">
@@ -302,7 +307,7 @@ main.center > section#page-chat.section:not(.active) { display: none !important;
         <button class="quick" data-prompt="帮我规划计划"><span class="qicon">☑</span><span><strong>规划计划</strong><small>行程、目标、步骤</small></span></button>
         <button class="quick" data-prompt="帮我分析数据"><span class="qicon">▥</span><span><strong>分析数据</strong><small>报表、趋势、建议</small></span></button>
       </div>
-      <div class="panel"><h3>💬 与灵克对话 <span class="hint">演示模式</span></h3><div id="chatLog" class="chat-log"><div class="message bot">目前我是网页演示版，能帮你保存和整理资料；尚未连接真正的 AI 模型。之后可以再接入本地 Qwen 模型。</div></div><div id="attachmentPreview" class="attachment-preview" hidden></div><div class="chatbox"><button class="attach" id="fileBtn" type="button" title="上传文件" aria-label="上传文件">＋</button><input id="chatFileInput" type="file" accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.csv,.png,.jpg,.jpeg,.webp,.gif" hidden><button class="attach" id="voiceBtn" title="语音输入">🎙</button><textarea id="chatInput" rows="1" placeholder="输入你的问题，或先点击＋上传文件…"></textarea><button class="send" id="sendBtn" aria-label="发送">➤</button></div><div class="suggestions"><button data-prompt="帮我规划一周的工作计划">帮我规划一周的工作计划</button><button data-prompt="总结这份文件">总结这份文件</button><button data-prompt="帮我写一封邮件">帮我写一封邮件</button><button data-prompt="分析这组数据">分析这组数据</button><button data-prompt="给我一些创意点子">给我一些创意点子</button></div></div>
+      <div class="panel"><h3 style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">💬 与灵克对话 <span style="display:flex;align-items:center;gap:8px"><span class="hint" id="activeChatLabel">新聊天</span><button type="button" id="newChatBtn" class="btn" style="padding:7px 12px;border-radius:10px">＋ 新建聊天</button></span></h3><div id="chatSessionList" style="display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px"></div><div id="chatLog" class="chat-log"><div class="message bot">目前我是网页演示版，能帮你保存和整理资料；尚未连接真正的 AI 模型。之后可以再接入本地 Qwen 模型。</div></div><div id="attachmentPreview" class="attachment-preview" hidden></div><div class="chatbox"><button class="attach" id="fileBtn" type="button" title="上传文件" aria-label="上传文件">＋</button><input id="chatFileInput" type="file" accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.csv,.png,.jpg,.jpeg,.webp,.gif" hidden><button class="attach" id="voiceBtn" title="语音输入">🎙</button><textarea id="chatInput" rows="1" placeholder="输入你的问题，或先点击＋上传文件…"></textarea><button class="send" id="sendBtn" aria-label="发送">➤</button></div><div class="suggestions"><button data-prompt="帮我规划一周的工作计划">帮我规划一周的工作计划</button><button data-prompt="总结这份文件">总结这份文件</button><button data-prompt="帮我写一封邮件">帮我写一封邮件</button><button data-prompt="分析这组数据">分析这组数据</button><button data-prompt="给我一些创意点子">给我一些创意点子</button></div></div>
     </section>
 
     <section id="page-memories" class="section">
@@ -341,12 +346,34 @@ const KEY='lingke_ai_data_v1';
 const $=id=>document.getElementById(id);
 const now=()=>new Date().toISOString();
 const dateText=()=>new Date().toLocaleString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long',hour:'2-digit',minute:'2-digit'});
-let data={memories:[],notes:[],tasks:[],chats:[]};
+let data={memories:[],notes:[],tasks:[],chats:[],chatSessions:[]};
+let activeChatId=localStorage.getItem('lingke_ai_active_chat_v1')||'';
+function ensureChatSessions(){
+  if(!Array.isArray(data.chatSessions)) data.chatSessions=[];
+  if(!data.chatSessions.length){
+    const legacy=Array.isArray(data.chats)?data.chats.filter(m=>m&&['user','assistant'].includes(m.role)&&typeof m.text==='string').map(m=>({id:String(m.id||uid()),role:m.role,text:m.text,date:m.date||now()})):[];
+    const session={id:uid(),title:legacy.find(m=>m.role==='user')?.text?.slice(0,24)||'旧聊天记录',createdAt:now(),updatedAt:now(),messages:legacy};
+    data.chatSessions.push(session); activeChatId=session.id;
+  }
+  if(!data.chatSessions.some(c=>String(c.id)===String(activeChatId))) activeChatId=data.chatSessions[0].id;
+  localStorage.setItem('lingke_ai_active_chat_v1',String(activeChatId));
+}
+function currentChat(){ensureChatSessions();return data.chatSessions.find(c=>String(c.id)===String(activeChatId))||data.chatSessions[0];}
+function newChat(){const c={id:uid(),title:'新聊天',createdAt:now(),updatedAt:now(),messages:[]};data.chatSessions.unshift(c);activeChatId=c.id;localStorage.setItem('lingke_ai_active_chat_v1',String(activeChatId));save();renderChat();toast('已创建独立聊天');}
+function selectChat(id){if(!data.chatSessions.some(c=>String(c.id)===String(id)))return;activeChatId=String(id);localStorage.setItem('lingke_ai_active_chat_v1',activeChatId);renderChat();}
+
 function toast(msg){const t=$('toast');t.textContent=msg;t.style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.style.display='none',2800)}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);data={memories:Array.isArray(d.memories)?d.memories:[],notes:Array.isArray(d.notes)?d.notes:[],tasks:Array.isArray(d.tasks)?d.tasks:[],chats:Array.isArray(d.chats)?d.chats:[]}}}catch(e){toast('读取本机资料失败，请检查浏览器储存设置')}} 
-function save(){try{localStorage.setItem(KEY,JSON.stringify(data));renderAll();return true}catch(e){toast('保存失败：可能是浏览器储存空间不足');return false}}
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);data={memories:Array.isArray(d.memories)?d.memories:[],notes:Array.isArray(d.notes)?d.notes:[],tasks:Array.isArray(d.tasks)?d.tasks:[],chats:Array.isArray(d.chats)?d.chats:[],chatSessions:Array.isArray(d.chatSessions)?d.chatSessions:[]}}}catch(e){toast('读取本机资料失败，请检查浏览器储存设置')}} 
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data));renderAll();if(typeof queueCloudSync==='function')queueCloudSync();return true}catch(e){toast('保存失败：可能是浏览器储存空间不足');return false}}
+const SYNC_URL='https://lewis.tail2ffb7c.ts.net/api/sync';
+let syncTimer=null,syncBusy=false,syncAgain=false;
+function mergeRecords(a,b){const out=new Map();[...(Array.isArray(a)?a:[]),...(Array.isArray(b)?b:[])].forEach(x=>{if(!x||typeof x!=='object')return;const k=String(x.id??('legacy:'+JSON.stringify(x)));out.set(k,{...(out.get(k)||{}),...x});});return [...out.values()];}
+function mergeData(remote,local){const out={};for(const k of ['memories','notes','tasks','chats','chatSessions'])out[k]=mergeRecords(remote?.[k],local?.[k]);return out;}
+async function syncWithServer(mode='merge'){if(syncBusy){syncAgain=true;return;}syncBusy=true;try{if(mode==='pull'){const r=await fetch(SYNC_URL,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);data=mergeData(await r.json(),data);localStorage.setItem(KEY,JSON.stringify(data));ensureChatSessions();renderAll();}const r=await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(!r.ok)throw Error('HTTP '+r.status);}catch(e){console.warn('灵克 AI 云同步暂不可用：',e);}finally{syncBusy=false;if(syncAgain){syncAgain=false;syncWithServer('merge');}}}
+function queueCloudSync(){if(syncTimer)clearTimeout(syncTimer);syncTimer=setTimeout(()=>syncWithServer('merge'),900);}
+
 function switchPage(name){
   document.querySelectorAll('main.center > .section').forEach(s=>{
     const isCurrent = s.id === 'page-' + name;
@@ -364,7 +391,7 @@ function switchPage(name){
 function itemMarkup(kind,x){const title=x.title||x.text||'未命名';return `<div class="item"><div class="item-main"><strong>${esc(title)}</strong>${x.text&&x.title?'<div>'+esc(x.text)+'</div>':''}${x.due?'<small>截止：'+esc(x.due)+'</small>':''}<small>${esc(x.date||x.createdAt||'')}</small></div><div class="item-actions">${kind==='tasks'?`<button data-toggle="${x.id}">${x.done?'恢复':'完成'}</button>`:''}<button data-delete="${kind}:${x.id}" aria-label="删除">删除</button></div></div>`}
 function renderList(id,kind){const arr=data[kind];$(id).innerHTML=arr.length?arr.slice().reverse().map(x=>itemMarkup(kind,x)).join(''):'<div class="empty">这里还没有内容，添加第一条吧。</div>'}
 function renderTasks(){const open=data.tasks.filter(t=>!t.done);$('taskCount').textContent=`${open.length} 项未完成`;$('todayTasks').innerHTML=open.length?open.slice(0,5).map(t=>`<label class="todo-row"><input type="checkbox" data-check="${t.id}"><span class="task-text">${esc(t.title)}${t.due?'<small style="display:block;color:#829ec7;margin-top:3px">'+esc(t.due)+'</small>':''}</span></label>`).join(''):'<div class="hint">今天暂时没有未完成任务 ✨</div>';renderList('taskList','tasks')}
-function renderChat(){const log=$('chatLog');const messages=data.chats.slice(-30);if(messages.length)log.innerHTML=messages.map(m=>`<div class="message ${m.role==='user'?'user':'bot'}">${esc(m.text)}</div>`).join('');log.scrollTop=log.scrollHeight}
+function renderChat(){ensureChatSessions();const c=currentChat();const log=$('chatLog');const messages=(c.messages||[]).slice(-100);log.innerHTML=messages.length?messages.map(m=>`<div class="message ${m.role==='user'?'user':'bot'}">${esc(m.text)}</div>`).join(''):'<div class="message bot">这是一个全新的聊天。之前其他聊天的内容不会自动带入这里。</div>';log.scrollTop=log.scrollHeight;$('activeChatLabel').textContent=c.title||'新聊天';const list=$('chatSessionList');list.innerHTML=data.chatSessions.slice(0,12).map(x=>`<button type="button" class="chat-session ${String(x.id)===String(activeChatId)?'active':''}" data-chat-session="${esc(x.id)}" title="${esc(x.title||'新聊天')}">${esc(x.title||'新聊天')}</button>`).join('');}
 function renderAll(){renderList('memoryList','memories');renderList('noteList','notes');renderTasks();renderChat();$('dateLabel').textContent=dateText();if($('backupInfo'))$('backupInfo').textContent=`记忆 ${data.memories.length} 条 · 笔记 ${data.notes.length} 条 · 待办 ${data.tasks.length} 项`}
 document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>switchPage(b.dataset.page)));
 document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>switchPage(b.dataset.goto)));
@@ -374,6 +401,8 @@ $('noteForm').addEventListener('submit',e=>{e.preventDefault();data.notes.push({
 $('taskForm').addEventListener('submit',e=>{e.preventDefault();data.tasks.push({id:uid(),title:$('taskTitle').value.trim(),due:$('taskDue').value,done:false,date:now()});if(save()){e.target.reset();toast('待办事项已添加')}})
 document.addEventListener('click',e=>{const del=e.target.closest('[data-delete]');if(del){const [kind,id]=del.dataset.delete.split(':');if(confirm('确定删除这条内容吗？')){data[kind]=data[kind].filter(x=>String(x.id)!==id);save();toast('已删除')}return}const tog=e.target.closest('[data-toggle]');if(tog){const t=data.tasks.find(x=>String(x.id)===tog.dataset.toggle);if(t){t.done=!t.done;save()}return}const chk=e.target.closest('[data-check]');if(chk){const t=data.tasks.find(x=>String(x.id)===chk.dataset.check);if(t){t.done=chk.checked;save()}return}const p=e.target.closest('[data-prompt]');if(p){$('chatInput').value=p.dataset.prompt;$('chatInput').focus()}});
 $('addTaskQuick').onclick=()=>{switchPage('tasks');$('taskTitle').focus()};
+$('newChatBtn').onclick=newChat;
+$('chatSessionList').addEventListener('click',e=>{const b=e.target.closest('[data-chat-session]');if(b)selectChat(b.dataset.chatSession)});
 
 async function reply(text){
   let t = text.trim();
@@ -391,24 +420,19 @@ async function reply(text){
   const fileToClear = selectedChatFile;
   selectedChatFile = null; chatFileInput.value = ''; attachmentPreview.hidden = true; attachmentPreview.innerHTML = '';
 
-  data.chats.push({
-    id: uid(),
-    role: 'user',
-    text: t,
-    date: now()
-  });
+  const chat = currentChat();
+  const userMessage = { id: uid(), role: 'user', text: t, date: now() };
+  chat.messages.push(userMessage); chat.updatedAt=now();
+  if(chat.title==='新聊天') chat.title=t.slice(0,24)||'新聊天';
+  data.chats.push(userMessage);
 
   $('chatInput').value = '';
   save();
   renderChat();
 
   const loadingId = uid();
-  data.chats.push({
-    id: loadingId,
-    role: 'assistant',
-    text: '灵克 AI 正在思考，请稍候…',
-    date: now()
-  });
+  const pendingMessage = { id: loadingId, role: 'assistant', text: '灵克 AI 正在思考，请稍候…', date: now() };
+  chat.messages.push(pendingMessage); data.chats.push(pendingMessage);
   renderChat();
 
   try {
@@ -417,7 +441,8 @@ async function reply(text){
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: t,
-        messages: data.chats
+        conversation_id: chat.id,
+        messages: chat.messages
           .filter(x => x && (x.role === 'user' || x.role === 'assistant') &&
                        typeof x.text === 'string' && x.text.trim() &&
                        x.text !== '灵克 AI 正在思考，请稍候…')
@@ -433,16 +458,17 @@ async function reply(text){
     const result = await response.json();
     const answer = result.reply || result.error || '暂时没有收到回复。';
 
-    const item = data.chats.find(x => String(x.id) === String(loadingId));
+    const item = chat.messages.find(x => String(x.id) === String(loadingId));
     if (item) item.text = answer;
+    const legacyItem=data.chats.find(x=>String(x.id)===String(loadingId)); if(legacyItem)legacyItem.text=answer;
+    chat.updatedAt=now();
 
     save();
     renderChat();
   } catch (error) {
-    const item = data.chats.find(x => String(x.id) === String(loadingId));
-    if (item) {
-      item.text = '暂时无法连接灵克 AI。请确认 Windows 后端正在运行，并检查网络连接。';
-    }
+    const item = chat.messages.find(x => String(x.id) === String(loadingId));
+    if (item) item.text = '暂时无法连接灵克 AI。请确认 Windows 后端正在运行，并检查网络连接。';
+    const legacyItem=data.chats.find(x=>String(x.id)===String(loadingId)); if(legacyItem)legacyItem.text=item?.text||'暂时无法连接灵克 AI。请确认 Windows 后端正在运行，并检查网络连接。';
     save();
     renderChat();
     console.error('Lingke AI connection error:', error);
@@ -515,10 +541,10 @@ $('voiceBtn').onclick = () => {
 $('exportBtn').onclick=()=>{const payload={app:'灵克 AI',version:1,exportedAt:now(),data};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const file=new File([blob],`灵克AI备份_${new Date().toISOString().replace(/[:.]/g,'-')}.json`,{type:'application/json'});if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({title:'灵克 AI 资料备份',text:'灵克 AI JSON 备份文件',files:[file]}).then(()=>toast('已打开系统分享菜单')).catch(()=>downloadBlob(blob,file.name))}else downloadBlob(blob,file.name)};
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('备份已导出；请在「文件」中确认保存')}
 $('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const parsed=JSON.parse(await f.text());const incoming=parsed.data||parsed;if(!['memories','notes','tasks','chats'].every(k=>Array.isArray(incoming[k])))throw new Error('文件结构不正确');if($('importMode').value==='replace'){if(!confirm('替换模式会覆盖本机现有资料，确定继续吗？'))return;data={memories:incoming.memories,notes:incoming.notes,tasks:incoming.tasks,chats:incoming.chats}}else{for(const k of ['memories','notes','tasks','chats']){const existing=new Set(data[k].map(x=>String(x.id)));incoming[k].forEach(x=>{if(!x.id||!existing.has(String(x.id))){data[k].push({...x,id:x.id||uid()})}})}}save();toast('导入成功');switchPage('backup')}catch(err){alert('导入失败：请确认选择的是灵克 AI 导出的有效 JSON 文件。')}})
-$('clearBtn').onclick=()=>{if(confirm('确定清除本机所有灵克 AI 资料吗？建议先导出备份。')){if(confirm('再次确认：此操作无法自动撤销，继续清除？')){data={memories:[],notes:[],tasks:[],chats:[]};save();toast('本机资料已清除')}}}
+$('clearBtn').onclick=()=>{if(confirm('确定清除本机所有灵克 AI 资料吗？建议先导出备份。')){if(confirm('再次确认：此操作无法自动撤销，继续清除？')){data={memories:[],notes:[],tasks:[],chats:[],chatSessions:[]};activeChatId='';ensureChatSessions();save();toast('本机资料已清除')}}}
 $('globalSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){const q=e.target.value.trim().toLowerCase();if(!q)return;const hits=[];for(const k of ['memories','notes','tasks','chats'])for(const x of data[k])if(JSON.stringify(x).toLowerCase().includes(q))hits.push({kind:k,x});if(!hits.length){toast('没有找到匹配资料');return}const first=hits[0];switchPage(({memories:'memories',notes:'notes',tasks:'tasks',chats:'chat'})[first.kind]);toast(`找到 ${hits.length} 条匹配资料；已打开相关页面`)}}); 
 $('themeBtn').onclick=()=>{document.body.classList.toggle('light');if(document.body.classList.contains('light')){document.documentElement.style.setProperty('--bg','#eaf1ff');document.documentElement.style.setProperty('--panel','#fff');document.documentElement.style.setProperty('--text','#14223d');toast('浅色主题已开启')}else{document.documentElement.style.setProperty('--bg','#030b1b');document.documentElement.style.setProperty('--panel','#081936');document.documentElement.style.setProperty('--text','#f3f7ff');toast('深色主题已开启')}};
-load();renderAll();switchPage('chat');
+load();ensureChatSessions();renderAll();switchPage('chat');syncWithServer('pull');
 })();
 </script>
 </body>
