@@ -29,6 +29,34 @@
 #page-voice.voice-fullscreen, #page-voice .voice-stage{overscroll-behavior:none}
 @media(max-width:700px){#page-voice .voice-page-title{padding:4px 2px 8px!important;gap:8px;font-size:20px}#page-voice .voice-title-icon{width:34px;height:34px;font-size:20px}#page-voice .voice-title-sub{display:none}}
 
+/* 修复：会话标签栏与第一条聊天消息重叠 */
+#page-chat #chatSessionList{
+  position:relative!important;
+  z-index:2!important;
+  display:flex!important;
+  flex:0 0 auto!important;
+  align-items:center!important;
+  min-height:38px!important;
+  height:auto!important;
+  margin:0 0 4px!important;
+  padding:4px 0 8px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  box-sizing:border-box!important;
+}
+#page-chat #chatLog{
+  position:relative!important;
+  z-index:1!important;
+  display:flex!important;
+  flex:1 1 0%!important;
+  min-height:0!important;
+  height:auto!important;
+  max-height:none!important;
+  margin:4px 0 12px!important;
+  padding-top:4px!important;
+  box-sizing:border-box!important;
+}
+
 /* 灵克 AI 多聊天会话：沿用现有主题，不改动整体布局 */
 #chatSessionList .chat-session{flex:0 0 auto;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid var(--border,#24466f);background:var(--panel,#0b1c38);color:var(--text,#f3f7ff);padding:7px 10px;border-radius:10px;cursor:pointer;font-size:12px}
 #chatSessionList .chat-session.active{background:linear-gradient(110deg,#087bd8,#633dff);border-color:#28a8ff;color:#fff}
