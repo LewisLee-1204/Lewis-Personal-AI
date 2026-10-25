@@ -576,43 +576,47 @@ html, body { min-width:0; }
 }
 </style>
 \n
-<style id="lingke-mobile-memory-scroll-fix">
-/* 修复手机版「记忆」页无法上下滑动；仅作用于手机记忆页面 */
+<style id="lingke-mobile-all-pages-scroll-fix">
+/* Mobile global scroll fix: allow the whole active page to scroll, not only Memory. */
 @media (max-width: 700px) {
   html, body {
-    overflow: hidden !important;
-    overscroll-behavior: none;
-  }
-  main.center {
-    min-height: 0 !important;
+    height: auto !important;
+    min-height: 100% !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: auto !important;
     touch-action: pan-y !important;
   }
-  main.center > #page-memories.section.active {
-    display: block !important;
-    position: relative !important;
+  body { position: relative !important; }
+  .layout {
+    height: auto !important;
+    min-height: calc(100vh - 82px) !important;
+    min-height: calc(100dvh - 82px) !important;
+    overflow: visible !important;
+    align-items: stretch !important;
+  }
+  main.center {
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
     overflow: visible !important;
-    flex: 0 0 auto !important;
     touch-action: pan-y !important;
   }
-  #page-memories .panel {
+  main.center > .section.active {
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
     overflow: visible !important;
+    overflow-y: visible !important;
+    overflow-x: visible !important;
+    overscroll-behavior: auto !important;
     touch-action: pan-y !important;
+    padding-bottom: 28px !important;
   }
-  #page-memories #memoryList {
-    height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
+  /* Keep long lists and forms from trapping the page's touch scrolling. */
+  #memoryList, #noteList, #taskList, .item-list, .panel {
     touch-action: pan-y !important;
-    -webkit-overflow-scrolling: touch !important;
   }
 }
 </style>
