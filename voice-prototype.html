@@ -352,16 +352,29 @@ html, body {
 
   <div class="bottom-note">
     灵克 AI 独立语音界面原型<br>
-    尚未连接本地 AI 模型 · 不会修改你的正式网站
+    已连接本地 Qwen AI · 语音对话与其他聊天记录独立
   </div>
 </div>
 
 <script>
 (() => {
   const $ = id => document.getElementById(id);
+  const VOICE_HISTORY_KEY = "lingke_voice_conversation_v10";
+  function loadVoiceHistory() {
+    try {
+      const value = JSON.parse(sessionStorage.getItem(VOICE_HISTORY_KEY) || "[]");
+      if (!Array.isArray(value)) return [];
+      return value.filter(item => item && (item.role === "user" || item.role === "assistant") &&
+        typeof item.content === "string" && item.content.trim()).slice(-20);
+    } catch (_) { return []; }
+  }
+  function saveVoiceHistory() {
+    try { sessionStorage.setItem(VOICE_HISTORY_KEY, JSON.stringify(state.conversation.slice(-20))); }
+    catch (err) { console.warn("无法保存本次语音会话历史：", err); }
+  }
   const state = {
     listening:false, speaking:false, compact:false, speaker:true,
-    recognition:null, interim:"", finalText:"", busy:false, lastReply:""
+    recognition:null, interim:"", finalText:"", busy:false, lastReply:"", conversation:loadVoiceHistory()
   };
 
   function setStatus(text, mode="") {
@@ -384,6 +397,13 @@ html, body {
       $("messages").removeChild($("messages").firstChild);
     }
     return el;
+  }
+
+  // Restore the current tab's voice conversation after a refresh/navigation.
+  // This stays in sessionStorage, separate from saved long-term memories and other chats.
+  if (state.conversation.length) {
+    $("messages").innerHTML = "";
+    state.conversation.forEach(item => addMessage(item.content, item.role === "user" ? "user" : "ai"));
   }
 
   function selectedLanguage(text="") {
@@ -502,25 +522,57 @@ html, body {
     }, 700);
   }
 
-  // 当前是界面演示回复，不是 Qwen 或在线 AI 生成的答案。
-  
+  // Voice conversation history is kept separate from other chats, while saved personal data is shared.
+  const API_BASE = "https://lewis.tail2ffb7c.ts.net";
+
   async function demoReply(text, lang) {
     setStatus("正在连接本地 Qwen AI…", "thinking");
-    $("hint").textContent = "正在思考，请稍候…";
+    $("hint").textContent = "正在读取个人记忆并整理本次语音对话…";
+
+    // Add the recognized user turn to this voice session only.
+    state.conversation.push({ role: "user", content: text });
+    state.conversation = state.conversation.slice(-20);
+    saveVoiceHistory();
 
     try {
-      const response = await fetch(
-        "https://lewis.tail2ffb7c.ts.net/api/chat",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-          message: text
-          })
+      // Read the saved collections from the same sync service used by the app.
+      // If sync is temporarily unavailable, continue the voice chat without saved context.
+      let personalContext = { memories: [], notes: [], tasks: [] };
+      try {
+        const syncResponse = await fetch(API_BASE + "/api/sync", { method: "GET", cache: "no-store" });
+        if (syncResponse.ok) {
+          const savedData = await syncResponse.json();
+          personalContext = {
+            memories: Array.isArray(savedData.memories) ? savedData.memories : [],
+            notes: Array.isArray(savedData.notes) ? savedData.notes : [],
+            tasks: Array.isArray(savedData.tasks) ? savedData.tasks : []
+          };
         }
-      );
+      } catch (syncError) {
+        console.warn("无法读取同步个人资料，将仅使用当前语音对话：", syncError);
+      }
+
+      // Compatibility fallback: if the running backend is an older version that
+      // ignores the `messages` array, include the prior voice turns in `message` too.
+      // The current backend uses `messages`; older backends still receive usable context.
+      const historyForFallback = state.conversation.slice(0, -1).slice(-18);
+      const historyText = historyForFallback.map(item =>
+        (item.role === "user" ? "用户" : "灵克 AI") + "：" + item.content
+      ).join("\\n");
+      const fallbackMessage = historyText
+        ? "以下是本次语音通话此前的对话记录，请据此理解当前问题。\\n" +
+          historyText + "\\n用户当前问题：" + text
+        : text;
+
+      const response = await fetch(API_BASE + "/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: fallbackMessage,
+          messages: state.conversation.slice(-20),
+          personal_context: personalContext
+        })
+      });
 
       if (!response.ok) {
         throw new Error("API 请求失败：" + response.status);
@@ -534,6 +586,9 @@ html, body {
       }
 
       state.lastReply = reply;
+      state.conversation.push({ role: "assistant", content: reply });
+      state.conversation = state.conversation.slice(-20);
+      saveVoiceHistory();
       addMessage(reply, "ai");
       $("hint").textContent = "回答来自你的本地 Qwen AI";
       setStatus("本地 AI 已回答", "thinking");
@@ -647,21 +702,6 @@ html, body {
     else startListening();
   });
 
-  // V8: the central glowing star is now an accessible shortcut to the real microphone control.
-  const orbCore = document.querySelector(".orb-core");
-  if (orbCore) {
-    orbCore.setAttribute("role", "button");
-    orbCore.setAttribute("tabindex", "0");
-    orbCore.setAttribute("aria-label", "点击开始语音聆听");
-    orbCore.addEventListener("click", () => $("micBtn").click());
-    orbCore.addEventListener("keydown", event => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        $("micBtn").click();
-      }
-    });
-  }
-
   $("endBtn").addEventListener("click", () => {
     stopListening();
     stopSpeech();
@@ -711,7 +751,7 @@ html, body {
   });
 
   $("settingsBtn").addEventListener("click", () => {
-    addMessage("语音设置：选择语言、切换文字显示或关闭语音播放。真正的本地模型连接尚未配置。", "note");
+    addMessage("语音设置：选择语言、切换文字显示或关闭语音播放。已连接本地 Qwen AI；语音上下文仅保留在当前通话会话中。", "note");
     $("language").focus();
   });
 
@@ -729,17 +769,5 @@ html, body {
   }
 })();
 </script>
-
-
-<style id="lingke-v8-voice-scroll-and-orb-click-fix">
-/* V8: let the embedded voice page scroll to its actual controls instead of clipping them. */
-html, body { height:auto !important; min-height:100% !important; overflow-x:hidden !important; overflow-y:auto !important; }
-body { display:block !important; }
-.app { height:auto !important; min-height:100% !important; max-height:none !important; overflow:visible !important; padding-bottom:24px !important; }
-.orb-core { cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
-.orb-core:focus-visible { outline:3px solid #8deaff; outline-offset:5px; }
-.controls { padding-bottom:10px; }
-</style>
-
 </body>
 </html>
