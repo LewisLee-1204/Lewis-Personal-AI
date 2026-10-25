@@ -95,6 +95,9 @@
 #chatSessionList .chat-session{flex:0 0 auto;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid var(--border,#24466f);background:var(--panel,#0b1c38);color:var(--text,#f3f7ff);padding:7px 10px;border-radius:10px;cursor:pointer;font-size:12px}
 #chatSessionList .chat-session.active{background:linear-gradient(110deg,#087bd8,#633dff);border-color:#28a8ff;color:#fff}
 #newChatBtn{border:1px solid #2188d8;background:linear-gradient(110deg,#087bd8,#633dff);color:#fff;cursor:pointer;font-weight:600}
+
+.chat-image-preview{display:block;max-width:min(100%,420px);max-height:320px;width:auto;height:auto;object-fit:contain;margin:8px 0 4px;border:1px solid rgba(90,170,255,.45);border-radius:12px;background:#081426}
+#attachmentPreview .selected-image-preview{display:block;max-width:180px;max-height:120px;object-fit:contain;border-radius:9px;margin:0 0 8px;border:1px solid rgba(90,170,255,.4)}
 </style>
 
 <style id="lingke-chat-layout-fix">
@@ -453,7 +456,7 @@ function switchPage(name){
 function itemMarkup(kind,x){const title=x.title||x.text||'未命名';return `<div class="item"><div class="item-main"><strong>${esc(title)}</strong>${x.text&&x.title?'<div>'+esc(x.text)+'</div>':''}${x.due?'<small>截止：'+esc(x.due)+'</small>':''}<small>${esc(x.date||x.createdAt||'')}</small></div><div class="item-actions">${kind==='tasks'?`<button data-toggle="${x.id}">${x.done?'恢复':'完成'}</button>`:''}<button data-delete="${kind}:${x.id}" aria-label="删除">删除</button></div></div>`}
 function renderList(id,kind){const arr=data[kind];$(id).innerHTML=arr.length?arr.slice().reverse().map(x=>itemMarkup(kind,x)).join(''):'<div class="empty">这里还没有内容，添加第一条吧。</div>'}
 function renderTasks(){const open=data.tasks.filter(t=>!t.done);$('taskCount').textContent=`${open.length} 项未完成`;$('todayTasks').innerHTML=open.length?open.slice(0,5).map(t=>`<label class="todo-row"><input type="checkbox" data-check="${t.id}"><span class="task-text">${esc(t.title)}${t.due?'<small style="display:block;color:#829ec7;margin-top:3px">'+esc(t.due)+'</small>':''}</span></label>`).join(''):'<div class="hint">今天暂时没有未完成任务 ✨</div>';renderList('taskList','tasks')}
-function renderChat(){ensureChatSessions();const c=currentChat();const log=$('chatLog');const messages=(c.messages||[]).slice(-100);log.innerHTML=messages.length?messages.map(m=>`<div class="message ${m.role==='user'?'user':'bot'}">${esc(m.text)}</div>`).join(''):'<div class="message bot">这是一个全新的聊天。之前其他聊天的内容不会自动带入这里。</div>';log.scrollTop=log.scrollHeight;$('activeChatLabel').textContent=c.title||'新聊天';const list=$('chatSessionList');list.innerHTML=data.chatSessions.slice(0,12).map(x=>`<button type="button" class="chat-session ${String(x.id)===String(activeChatId)?'active':''}" data-chat-session="${esc(x.id)}" title="${esc(x.title||'新聊天')}">${esc(x.title||'新聊天')}</button>`).join('');}
+function renderChat(){ensureChatSessions();const c=currentChat();const log=$('chatLog');const messages=(c.messages||[]).slice(-100);log.innerHTML=messages.length?messages.map(m=>`<div class="message ${m.role==='user'?'user':'bot'}">${esc(m.text)}${m.imageData ? '<img class=\"chat-image-preview\" src=\"'+m.imageData+'\" alt=\"已上传图片\">' : ''}</div>`).join(''):'<div class="message bot">这是一个全新的聊天。之前其他聊天的内容不会自动带入这里。</div>';log.scrollTop=log.scrollHeight;$('activeChatLabel').textContent=c.title||'新聊天';const list=$('chatSessionList');list.innerHTML=data.chatSessions.slice(0,12).map(x=>`<button type="button" class="chat-session ${String(x.id)===String(activeChatId)?'active':''}" data-chat-session="${esc(x.id)}" title="${esc(x.title||'新聊天')}">${esc(x.title||'新聊天')}</button>`).join('');}
 function renderAll(){renderList('memoryList','memories');renderList('noteList','notes');renderTasks();renderChat();$('dateLabel').textContent=dateText();if($('backupInfo'))$('backupInfo').textContent=`记忆 ${data.memories.length} 条 · 笔记 ${data.notes.length} 条 · 待办 ${data.tasks.length} 项`}
 document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>switchPage(b.dataset.page)));
 document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>switchPage(b.dataset.goto)));
@@ -466,8 +469,21 @@ $('addTaskQuick').onclick=()=>{switchPage('tasks');$('taskTitle').focus()};
 $('newChatBtn').onclick=newChat;
 $('chatSessionList').addEventListener('click',e=>{const b=e.target.closest('[data-chat-session]');if(b)selectChat(b.dataset.chatSession)});
 
+
+async function makeChatImagePreview(file){
+  if(!file || !file.type || !file.type.startsWith('image/')) return null;
+  try {
+    const original = await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=reader.result;};reader.onerror=reject;reader.readAsDataURL(file);});
+    const maxSide=900, scale=Math.min(1,maxSide/Math.max(original.naturalWidth||original.width,original.naturalHeight||original.height));
+    const canvas=document.createElement('canvas'); canvas.width=Math.max(1,Math.round((original.naturalWidth||original.width)*scale)); canvas.height=Math.max(1,Math.round((original.naturalHeight||original.height)*scale));
+    canvas.getContext('2d').drawImage(original,0,0,canvas.width,canvas.height);
+    return canvas.toDataURL('image/jpeg',0.72);
+  } catch(e){ console.warn('图片预览生成失败',e); return null; }
+}
+
 async function reply(text){
-  let t = text.trim();
+  const typedText = text.trim();
+  let t = typedText;
   if (selectedChatFile) {
     const f = selectedChatFile;
     try {
@@ -488,12 +504,14 @@ async function reply(text){
   }
   if (!t) return;
   const fileToClear = selectedChatFile;
+  const imageData = fileToClear && fileToClear.type && fileToClear.type.startsWith('image/') ? await makeChatImagePreview(fileToClear) : null;
+  const visibleText = fileToClear ? ((typedText ? typedText + '\n' : '') + '📎 已上传文件：' + fileToClear.name) : typedText;
   selectedChatFile = null; chatFileInput.value = ''; attachmentPreview.hidden = true; attachmentPreview.innerHTML = '';
 
   const chat = currentChat();
-  const userMessage = { id: uid(), role: 'user', text: t, date: now() };
+  const userMessage = { id: uid(), role: 'user', text: visibleText || '已上传文件', ...(imageData ? {imageData} : {}), date: now() };
   chat.messages.push(userMessage); chat.updatedAt=now();
-  if(chat.title==='新聊天') chat.title=t.slice(0,24)||'新聊天';
+  if(chat.title==='新聊天') chat.title=(visibleText||t).slice(0,24)||'新聊天';
   data.chats.push(userMessage);
 
   $('chatInput').value = '';
@@ -562,6 +580,11 @@ chatFileInput.addEventListener('change', () => {
   if (!selectedChatFile) { attachmentPreview.hidden = true; attachmentPreview.innerHTML = ''; return; }
   const size = selectedChatFile.size < 1024*1024 ? (selectedChatFile.size/1024).toFixed(1)+' KB' : (selectedChatFile.size/1024/1024).toFixed(2)+' MB';
   attachmentPreview.innerHTML = '<span>📎</span><span><strong></strong><br><small></small></span><button type="button" class="file-remove" title="移除文件" aria-label="移除文件">×</button>';
+  if(selectedChatFile.type && selectedChatFile.type.startsWith('image/')){
+    const thumb=document.createElement('img'); thumb.className='selected-image-preview'; thumb.alt='图片预览';
+    const reader=new FileReader(); reader.onload=()=>{thumb.src=reader.result;}; reader.readAsDataURL(selectedChatFile);
+    attachmentPreview.prepend(thumb);
+  }
   attachmentPreview.querySelector('strong').textContent = selectedChatFile.name;
   attachmentPreview.querySelector('small').textContent = size;
   attachmentPreview.hidden = false;
