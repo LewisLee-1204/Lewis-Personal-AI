@@ -29,6 +29,36 @@
 #page-voice.voice-fullscreen, #page-voice .voice-stage{overscroll-behavior:none}
 @media(max-width:700px){#page-voice .voice-page-title{padding:4px 2px 8px!important;gap:8px;font-size:20px}#page-voice .voice-title-icon{width:34px;height:34px;font-size:20px}#page-voice .voice-title-sub{display:none}}
 
+/* 修复：资料页面内容过长时，允许在主内容区上下滚动 */
+.center > .section.active:not(#page-chat) {
+  height:100%!important;
+  max-height:100%!important;
+  min-height:0!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior:contain;
+  padding:2px 4px 28px 0;
+  scrollbar-width:thin;
+  scrollbar-color:#2789dc #0a1a35;
+}
+.center > .section.active:not(#page-chat)::-webkit-scrollbar { width:7px; }
+.center > .section.active:not(#page-chat)::-webkit-scrollbar-thumb {
+  background:linear-gradient(180deg,#42d7ff,#2877ff 55%,#6556ff);
+  border-radius:999px;
+}
+@media(max-width:1050px) {
+  .center > .section.active:not(#page-chat) { height:auto!important; max-height:none!important; }
+}
+@media(max-width:700px) {
+  html,body { overflow:auto!important; height:auto!important; min-height:100%; }
+  .layout { overflow:visible!important; }
+  .center { overflow:visible!important; height:auto!important; }
+  .center > .section.active:not(#page-chat) {
+    height:auto!important; max-height:none!important; min-height:65vh!important;
+    overflow:visible!important; padding-bottom:28px;
+  }
+}
+
 /* 修复：会话标签栏与第一条聊天消息重叠 */
 #page-chat #chatSessionList{
   position:relative!important;
@@ -730,6 +760,11 @@ async function reply(text){
       body: JSON.stringify({
         message: t,
         conversation_id: chat.id,
+        personal_context: {
+          memories: data.memories.slice(-40),
+          notes: data.notes.slice(-40),
+          tasks: data.tasks.slice(-60)
+        },
         messages: chat.messages
           .filter(x => x && (x.role === 'user' || x.role === 'assistant') &&
                        typeof x.text === 'string' && x.text.trim() &&
@@ -914,5 +949,48 @@ document.addEventListener('click',function(e){
 load();ensureChatSessions();renderAll();switchPage('chat');syncWithServer('pull');
 })();
 </script>
+
+<style id="lingke-v5-records-scroll-fix">
+/* V5: Make non-chat sections independently scrollable on desktop,
+   and restore natural document scrolling on mobile. Keep chat layout unchanged. */
+@media (min-width: 701px) {
+  body { overflow: hidden !important; }
+  .layout { height: calc(100dvh - 82px) !important; min-height: 0 !important; overflow: hidden !important; }
+  .center { height: 100% !important; min-height: 0 !important; overflow: hidden !important; }
+  .center > .section.active:not(#page-chat) {
+    display: block !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
+    box-sizing: border-box !important;
+    padding: 4px 5px 36px 0 !important;
+    scrollbar-width: thin;
+    scrollbar-color: #2789dc #0a1a35;
+  }
+  .center > .section.active:not(#page-chat)::-webkit-scrollbar { width: 8px; }
+  .center > .section.active:not(#page-chat)::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg,#42d7ff,#2877ff 55%,#6556ff);
+    border-radius: 999px;
+  }
+}
+@media (max-width: 700px) {
+  html, body { height: auto !important; min-height: 100% !important; overflow-y: auto !important; overflow-x: hidden !important; }
+  .layout { height: auto !important; min-height: calc(100vh - 64px) !important; overflow: visible !important; }
+  .center { height: auto !important; min-height: 0 !important; overflow: visible !important; }
+  .center > .section.active:not(#page-chat) {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 60vh !important;
+    overflow: visible !important;
+    padding: 4px 2px 32px !important;
+    box-sizing: border-box !important;
+  }
+}
+</style>
+
 </body>
 </html>
