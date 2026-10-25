@@ -484,7 +484,8 @@ async function makeChatImagePreview(file){
 async function reply(text){
   const typedText = text.trim();
   let t = typedText;
-  if (selectedChatFile) {
+  const selectedIsImage = !!(selectedChatFile && selectedChatFile.type && selectedChatFile.type.startsWith('image/'));
+  if (selectedChatFile && !selectedIsImage) {
     const f = selectedChatFile;
     try {
       const formData = new FormData();
@@ -502,9 +503,14 @@ async function reply(text){
       return;
     }
   }
-  if (!t) return;
   const fileToClear = selectedChatFile;
   const imageData = fileToClear && fileToClear.type && fileToClear.type.startsWith('image/') ? await makeChatImagePreview(fileToClear) : null;
+  if (fileToClear && fileToClear.type && fileToClear.type.startsWith('image/') && !imageData) {
+    alert('图片预处理失败，请换一张 JPG/PNG 图片后重试。');
+    return;
+  }
+  if (!t && imageData) t = '请直接分析我上传的图片，描述图片中的主要内容。';
+  if (!t) return;
   const visibleText = fileToClear ? ((typedText ? typedText + '\n' : '') + '📎 已上传文件：' + fileToClear.name) : typedText;
   selectedChatFile = null; chatFileInput.value = ''; attachmentPreview.hidden = true; attachmentPreview.innerHTML = '';
 
@@ -529,6 +535,8 @@ async function reply(text){
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: t,
+        // 关键修复：把压缩后的图片 data URL 发送给后端视觉模型。
+        images: imageData ? [imageData] : [],
         conversation_id: chat.id,
         personal_context: {
           memories: data.memories.slice(-40),
