@@ -635,6 +635,95 @@ html, body { min-width:0; }
 }
 </style>
 
+
+<style id="lingke-mobile-layout-repair-2026-10">
+/* Targeted mobile repair: undo conflicting fixed-height patches without changing app logic. */
+@media (max-width: 700px) {
+  html, body {
+    width: 100% !important; min-width: 0 !important;
+    height: auto !important; min-height: 100% !important; max-height: none !important;
+    overflow-x: hidden !important; overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important; touch-action: pan-y !important;
+  }
+  body { position: relative !important; }
+  header.topbar {
+    position: relative !important; inset: auto !important; transform: none !important;
+    display: grid !important; grid-template-columns: minmax(0,1fr) auto !important;
+    grid-template-areas: "brand actions" "search search" !important;
+    width: 100% !important; height: auto !important; min-height: 0 !important; max-height: none !important;
+    overflow: visible !important; box-sizing: border-box !important; flex: 0 0 auto !important;
+  }
+  header.topbar > .brand { grid-area: brand !important; min-width: 0 !important; }
+  header.topbar > .top-actions { grid-area: actions !important; position: relative !important; }
+  header.topbar > .search { grid-area: search !important; width: 100% !important; min-width: 0 !important; position: relative !important; inset: auto !important; transform: none !important; }
+  .layout {
+    position: relative !important; display: flex !important; flex-direction: column !important;
+    width: 100% !important; height: auto !important; min-height: 0 !important; max-height: none !important;
+    overflow: visible !important; box-sizing: border-box !important; align-items: stretch !important;
+    padding: 6px 8px 12px !important; gap: 8px !important; margin: 0 !important;
+  }
+  .layout > .sidebar {
+    position: relative !important; inset: auto !important; order: 0 !important; display: block !important;
+    flex: 0 0 auto !important; width: 100% !important; height: auto !important; min-height: 0 !important; max-height: none !important;
+    overflow-x: auto !important; overflow-y: hidden !important; white-space: nowrap !important;
+    touch-action: pan-x !important; -webkit-overflow-scrolling: touch !important; padding: 0 !important; margin: 0 !important;
+  }
+  .layout > .sidebar nav {
+    display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important;
+    width: max-content !important; min-width: 100% !important; height: auto !important;
+    overflow: visible !important; gap: 7px !important; padding: 0 0 4px !important; margin: 0 !important;
+  }
+  .layout > .sidebar .nav-btn {
+    display: inline-flex !important; flex: 0 0 auto !important; width: auto !important; min-width: max-content !important;
+    min-height: 42px !important; height: 42px !important; padding: 0 12px !important; margin: 0 !important;
+  }
+  .layout > .sidebar .about { display: none !important; }
+  main.center {
+    order: 1 !important; display: flex !important; flex: 0 0 auto !important; flex-direction: column !important;
+    width: 100% !important; height: auto !important; min-height: 0 !important; max-height: none !important;
+    overflow: visible !important; gap: 8px !important; touch-action: pan-y !important;
+  }
+  main.center > .section { display: none !important; width: 100% !important; height: auto !important; min-height: 0 !important; max-height: none !important; overflow: visible !important; box-sizing: border-box !important; }
+  main.center > .section.active { display: flex !important; flex: 0 0 auto !important; flex-direction: column !important; visibility: visible !important; height: auto !important; min-height: 0 !important; max-height: none !important; overflow: visible !important; padding-bottom: 20px !important; }
+  #page-chat.section.active { display: flex !important; flex-direction: column !important; gap: 10px !important; }
+  #page-chat .hero { min-height: 0 !important; height: auto !important; padding: 16px 12px !important; gap: 12px !important; }
+  #page-chat .panel {
+    position: relative !important; display: flex !important; flex: 0 0 auto !important; flex-direction: column !important;
+    width: 100% !important; height: auto !important; min-height: 0 !important; max-height: none !important;
+    margin: 0 !important; padding: 12px 10px !important; overflow: visible !important; box-sizing: border-box !important;
+  }
+  #page-chat #chatLog {
+    display: flex !important; flex: 0 0 auto !important; flex-direction: column !important;
+    width: 100% !important; height: auto !important; min-height: 120px !important; max-height: 48vh !important;
+    overflow-y: auto !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch !important;
+    box-sizing: border-box !important; scroll-behavior: auto !important;
+  }
+  #page-chat .chatbox {
+    position: relative !important; inset: auto !important; flex: 0 0 auto !important;
+    left: auto !important; right: auto !important; bottom: auto !important; width: 100% !important;
+    margin: 10px 0 0 !important; z-index: 2 !important; box-sizing: border-box !important;
+  }
+  #page-chat .suggestions { position: relative !important; width: 100% !important; max-width: 100% !important; overflow-x: auto !important; }
+  #page-voice.voice-fullscreen.active {
+    display: flex !important; flex-direction: column !important; position: relative !important; inset: auto !important;
+    width: 100% !important; height: auto !important; min-height: 0 !important; max-height: none !important;
+    overflow: visible !important; padding: 10px !important; box-sizing: border-box !important;
+  }
+  #page-voice .voice-page-title { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; }
+  #page-voice .voice-stage { position: relative !important; display: block !important; width: 100% !important; height: 68vh !important; min-height: 420px !important; max-height: 760px !important; overflow: hidden !important; }
+  #page-voice .voice-stage iframe { display: block !important; width: 100% !important; height: 100% !important; min-height: 0 !important; border: 0 !important; }
+  .rightbar { display: none !important; }
+  .footer { display: block !important; position: relative !important; margin: 8px 0 16px !important; }
+  #memoryList, #noteList, #taskList, .item-list { max-height: none !important; overflow: visible !important; }
+}
+@media (max-width: 390px) {
+  #page-chat .chatbox { gap: 5px !important; }
+  #page-chat .chatbox textarea { min-width: 0 !important; font-size: 15px !important; }
+  #page-chat .send { flex: 0 0 44px !important; min-width: 44px !important; }
+  #page-voice .voice-stage { min-height: 360px !important; }
+}
+</style>
+
 </head>
 <body>
 <header class="topbar">
