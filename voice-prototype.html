@@ -207,6 +207,25 @@ h1 { font-size:17px; }
 <style id="lingke-audio-fix">
 #speakerBtn { touch-action: manipulation; }
 </style>
+
+<style id="lingke-readable-text-fix">
+/* Readability fix: restore comfortable conversation text size on desktop and mobile */
+.transcript-title { font-size:16px !important; }
+.small-btn { font-size:14px !important; }
+.message { font-size:17px !important; line-height:1.6 !important; padding:10px 12px !important; }
+.message.note { font-size:14px !important; }
+@media (max-width:700px) {
+  .transcript { min-height:90px; max-height:205px; padding:10px 11px; }
+  .transcript-top { margin-bottom:8px; }
+  .messages { max-height:150px; gap:8px; }
+  .message { font-size:16px !important; line-height:1.55 !important; padding:9px 11px !important; }
+  .message.note { font-size:14px !important; }
+}
+@media (max-height:620px) and (max-width:700px) {
+  .transcript { max-height:170px; }
+  .messages { max-height:115px; }
+}
+</style>
 </head>
 <body>
 <div class="app">
