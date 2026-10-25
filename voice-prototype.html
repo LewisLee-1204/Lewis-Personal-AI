@@ -289,6 +289,60 @@ html, body {
 }
 </style>
 
+
+
+<style id="lingke-voice-neon-scrollbar-polish">
+/* Lingke AI Voice — match the app's deep-blue / neon-blue scrollbar theme */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #258fe8 #08162b;
+}
+
+body, * {
+  scrollbar-width: thin;
+  scrollbar-color: #258fe8 #08162b;
+}
+
+/* Chrome / Edge / Safari */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #08162b;
+  border-left: 1px solid rgba(44, 125, 205, 0.18);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    #35d9ff 0%,
+    #1689ed 52%,
+    #5945ff 100%
+  );
+  border: 2px solid #08162b;
+  border-radius: 10px;
+  min-height: 36px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    #78eaff 0%,
+    #36a8ff 52%,
+    #8174ff 100%
+  );
+}
+
+::-webkit-scrollbar-corner {
+  background: #08162b;
+}
+
+/* Keep the transcript's natural page scrolling; only style its scrollbar. */
+</style>
+
 </head>
 <body>
 <div class="app">
