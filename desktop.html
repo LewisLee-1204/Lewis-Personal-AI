@@ -470,12 +470,20 @@ async function reply(text){
   let t = text.trim();
   if (selectedChatFile) {
     const f = selectedChatFile;
-    const isPlain = /\.(txt|csv)$/i.test(f.name);
-    if (isPlain) {
-      try { const content = await f.text(); t = (t ? t + '\n\n' : '') + '我上传了文件：' + f.name + '\n以下是文件内容，请根据内容回答：\n' + content.slice(0, 50000); }
-      catch (_) { t = (t ? t + '\n\n' : '') + '我选择了文件：' + f.name + '，但浏览器无法读取其内容。'; }
-    } else {
-      t = (t ? t + '\n\n' : '') + '我选择了文件：' + f.name + '。请告知我：当前网页已选择该文件，但 PDF、Word、Excel 和图片的实际解析/视觉分析接口尚未接通。';
+    try {
+      const formData = new FormData();
+      formData.append('file', f, f.name);
+      const fileResponse = await fetch('https://lewis.tail2ffb7c.ts.net/api/read-file', {
+        method: 'POST', body: formData
+      });
+      const fileResult = await fileResponse.json().catch(() => ({}));
+      if (!fileResponse.ok) throw new Error(fileResult.error || ('文件读取失败（HTTP ' + fileResponse.status + '）'));
+      const content = String(fileResult.extracted_text || '').trim();
+      if (!content) throw new Error('文件没有提取到可分析的文字。');
+      t = (t ? t + '\n\n' : '') + '我上传了文件：' + f.name + '\n请严格根据以下文件内容回答；如果内容没有提供答案，请明确说明。\n--- 文件内容开始 ---\n' + content + '\n--- 文件内容结束 ---';
+    } catch (error) {
+      alert('无法读取文件：' + (error && error.message ? error.message : '未知错误') + '\n请确认后端已更新并已安装所需依赖。');
+      return;
     }
   }
   if (!t) return;
