@@ -157,6 +157,7 @@ body{overscroll-behavior:none}
 #page-voice{overscroll-behavior:contain}
 .footer{flex:0 0 auto}
 .message{box-shadow:0 3px 12px #0002}
+.message .chat-image-preview{display:block;max-width:min(100%,520px);max-height:360px;width:auto;height:auto;object-fit:contain;margin:8px 0 2px;border:1px solid #4a80bd;border-radius:12px;background:#061329}.message .chat-file-caption{display:block;font-size:12px;opacity:.82;margin-top:5px;overflow-wrap:anywhere}
 .chatbox:focus-within{border-color:#36baff;box-shadow:0 0 0 3px #168fe833,0 8px 30px #0005}
 #fileBtn{width:44px;height:44px;flex:0 0 44px;border-radius:15px;color:#e9f7ff;transition:background .2s,transform .2s}
 #fileBtn:hover{transform:rotate(90deg);background:#12345d}
@@ -729,7 +730,7 @@ function switchPage(name){
 function itemMarkup(kind,x){const title=x.title||x.text||'未命名';return `<div class="item"><div class="item-main"><strong>${esc(title)}</strong>${x.text&&x.title?'<div>'+esc(x.text)+'</div>':''}${x.due?'<small>截止：'+esc(x.due)+'</small>':''}<small>${esc(x.date||x.createdAt||'')}</small></div><div class="item-actions">${kind==='tasks'?`<button data-toggle="${x.id}">${x.done?'恢复':'完成'}</button>`:''}<button data-delete="${kind}:${x.id}" aria-label="删除">删除</button></div></div>`}
 function renderList(id,kind){const arr=data[kind];$(id).innerHTML=arr.length?arr.slice().reverse().map(x=>itemMarkup(kind,x)).join(''):'<div class="empty">这里还没有内容，添加第一条吧。</div>'}
 function renderTasks(){const open=data.tasks.filter(t=>!t.done);$('taskCount').textContent=`${open.length} 项未完成`;$('todayTasks').innerHTML=open.length?open.slice(0,5).map(t=>`<label class="todo-row"><input type="checkbox" data-check="${t.id}"><span class="task-text">${esc(t.title)}${t.due?'<small style="display:block;color:#829ec7;margin-top:3px">'+esc(t.due)+'</small>':''}</span></label>`).join(''):'<div class="hint">今天暂时没有未完成任务 ✨</div>';renderList('taskList','tasks')}
-function renderChat(){ensureChatSessions();const c=currentChat();const log=$('chatLog');const messages=(c.messages||[]).slice(-100);log.innerHTML=messages.length?messages.map(m=>`<div class="message ${m.role==='user'?'user':'bot'}">${esc(m.text)}</div>`).join(''):'<div class="message bot">这是一个全新的聊天。之前其他聊天的内容不会自动带入这里。</div>';log.scrollTop=log.scrollHeight;$('activeChatLabel').textContent=c.title||'新聊天';const list=$('chatSessionList');list.innerHTML=data.chatSessions.slice(0,12).map(x=>`<button type="button" class="chat-session ${String(x.id)===String(activeChatId)?'active':''}" data-chat-session="${esc(x.id)}" title="${esc(x.title||'新聊天')}">${esc(x.title||'新聊天')}</button>`).join('');}
+function renderChat(){ensureChatSessions();const c=currentChat();const log=$('chatLog');const messages=(c.messages||[]).slice(-100);log.innerHTML=messages.length?messages.map(m=>`<div class="message ${m.role==='user'?'user':'bot'}">${m.imageData?`<img class="chat-image-preview" src="${m.imageData}" alt="${esc(m.fileName||'上传的图片')}" loading="lazy">`:''}${esc(m.text)}${m.fileName&&!m.imageData?`<span class="chat-file-caption">📎 ${esc(m.fileName)}</span>`:''}</div>`).join(''):'<div class="message bot">这是一个全新的聊天。之前其他聊天的内容不会自动带入这里。</div>';log.scrollTop=log.scrollHeight;$('activeChatLabel').textContent=c.title||'新聊天';const list=$('chatSessionList');list.innerHTML=data.chatSessions.slice(0,12).map(x=>`<button type="button" class="chat-session ${String(x.id)===String(activeChatId)?'active':''}" data-chat-session="${esc(x.id)}" title="${esc(x.title||'新聊天')}">${esc(x.title||'新聊天')}</button>`).join('');}
 function renderAll(){renderList('memoryList','memories');renderList('noteList','notes');renderTasks();renderChat();$('dateLabel').textContent=dateText();if($('backupInfo'))$('backupInfo').textContent=`记忆 ${data.memories.length} 条 · 笔记 ${data.notes.length} 条 · 待办 ${data.tasks.length} 项`}
 document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>switchPage(b.dataset.page)));
 document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>switchPage(b.dataset.goto)));
@@ -741,6 +742,19 @@ document.addEventListener('click',e=>{const del=e.target.closest('[data-delete]'
 $('addTaskQuick').onclick=()=>{switchPage('tasks');$('taskTitle').focus()};
 $('newChatBtn').onclick=newChat;
 $('chatSessionList').addEventListener('click',e=>{const b=e.target.closest('[data-chat-session]');if(b)selectChat(b.dataset.chatSession)});
+
+async function makeChatImagePreview(file){
+  if(!file || !file.type || !file.type.startsWith('image/')) return null;
+  // Downscale the preview before saving it with chat history to avoid exhausting localStorage.
+  try {
+    const source = await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error||new Error('图片读取失败'));reader.readAsDataURL(file);});
+    const img = await new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(new Error('无法预览此图片'));image.src=source;});
+    const maxSide=1000, scale=Math.min(1,maxSide/Math.max(img.naturalWidth||img.width,img.naturalHeight||img.height));
+    const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round((img.naturalWidth||img.width)*scale));canvas.height=Math.max(1,Math.round((img.naturalHeight||img.height)*scale));
+    const ctx=canvas.getContext('2d');if(!ctx)return source;ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    return canvas.toDataURL('image/jpeg',0.72);
+  } catch(err) { console.warn('图片预览生成失败：',err); return null; }
+}
 
 async function reply(text){
   let t = text.trim();
@@ -764,13 +778,14 @@ async function reply(text){
   }
   if (!t) return;
   const fileToClear = selectedChatFile;
+  const imageData = fileToClear && fileToClear.type && fileToClear.type.startsWith('image/') ? await makeChatImagePreview(fileToClear) : null;
   selectedChatFile = null; chatFileInput.value = ''; attachmentPreview.hidden = true; attachmentPreview.innerHTML = '';
 
   const chat = currentChat();
-  const userMessage = { id: uid(), role: 'user', text: t, date: now() };
+  const userMessage = { id: uid(), role: 'user', text: t, date: now(), ...(imageData ? {imageData, fileName:fileToClear.name} : (fileToClear ? {fileName:fileToClear.name} : {})) };
   chat.messages.push(userMessage); chat.updatedAt=now();
   if(chat.title==='新聊天') chat.title=t.slice(0,24)||'新聊天';
-  data.chats.push(userMessage);
+  data.chats.push({ id:userMessage.id, role:userMessage.role, text:userMessage.text, date:userMessage.date, ...(userMessage.fileName ? {fileName:userMessage.fileName} : {}) });
 
   $('chatInput').value = '';
   save();
