@@ -363,7 +363,7 @@ main.center > section#page-chat.section:not(.active) { display: none !important;
 #chatSessionList .chat-session-row{display:flex;align-items:center;gap:4px;flex:0 0 auto;max-width:230px;border:1px solid var(--border,#24466f);border-radius:10px;background:var(--panel,#0b1c38);padding:2px}
 #chatSessionList .chat-session-row .chat-session{min-width:0;max-width:180px;border:0!important;background:transparent!important;color:var(--text,#f3f7ff);padding:6px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 #chatSessionList .chat-session-row .chat-session.active{background:linear-gradient(110deg,#087bd8,#633dff)!important;color:#fff;border-radius:7px}
-#chatSessionList .chat-session-delete{flex:0 0 25px;width:25px;height:25px;padding:0;border:1px solid rgba(255,100,120,.35);border-radius:7px;background:rgba(12,30,58,.92);color:#d7e7ff;cursor:pointer;font-size:18px;line-height:1}
+#chatSessionList .chat-session-delete{flex:0 0 25px;width:25px;height:25px;padding:0;border:1px solid rgba(255,100,120,.35);border-radius:7px;background:rgba(180,45,70,.14);color:#ff9aa9;cursor:pointer;font-size:18px;line-height:1}
 #chatSessionList .chat-session-delete:hover{background:rgba(220,55,80,.35);color:#fff}
 #chatSessionList .chat-session-empty{color:var(--muted,#829ec7);font-size:12px;padding:8px}
 </style>
@@ -415,7 +415,7 @@ main.center > section#page-chat.section:not(.active) { display: none !important;
       <h2 class="section-title">▱ 文件管理</h2><div class="panel"><p>灵克 AI 当前支持 JSON 数据备份。你可以把导出的文件保存在 iPhone「文件」App 中。</p><button class="btn primary" id="goBackup">打开备份与还原</button><p class="hint">本网页不会自动读取整个 iPhone 文件夹；导入文件需要你手动选择。</p></div>
     </section>
     <section id="page-backup" class="section">
-      <h2 class="section-title">⟳ 备份与还原</h2><div class="panel"><p>建议定期导出备份，并将 JSON 文件保存到 iCloud Drive 或 iPhone「文件」App。导入前请确认文件来自灵克 AI。</p><div class="form"><button class="btn primary" id="exportBtn">⬇ 导出 JSON 备份</button><label class="btn" for="importFile" style="text-align:center;cursor:pointer">⬆ 选择 JSON 文件导入</label><input id="importFile" type="file" accept=".json,application/json" hidden><select id="importMode"><option value="merge">合并导入（保留现有资料）</option><option value="replace">替换现有资料（谨慎使用）</option></select><button class="btn danger" id="clearBtn">清除本机所有资料</button></div><p class="hint">导出会包含记忆、笔记、待办事项和聊天记录。资料保存在此浏览器的本机储存中，不会自动同步到其他设备。</p><div id="backupInfo" class="hint"></div></div>
+      <h2 class="section-title">⟳ 备份与还原</h2><div class="panel"><p>建议定期导出备份，并将 JSON 文件保存到 iCloud Drive 或 iPhone「文件」App。导入前请确认文件来自灵克 AI。</p><div class="form"><button class="btn primary" id="exportBtn">⬇ 导出 JSON 备份</button><label class="btn" for="importFile" style="text-align:center;cursor:pointer">⬆ 选择 JSON 文件导入</label><input id="importFile" type="file" accept=".json,application/json" hidden><select id="importMode"><option value="merge">合并导入（保留现有资料）</option><option value="replace">替换现有资料（谨慎使用）</option></select><button class="btn danger" id="clearBtn">清除本机所有资料</button></div><p class="hint">导出会包含记忆、笔记、待办事项和聊天记录。资料会保存在本机，并在同步服务可用时自动同步到其他设备。若同步失败，请检查网络与 Windows 后端。</p><div id="backupInfo" class="hint"></div></div>
     </section>
     <section id="page-settings" class="section">
       
@@ -512,26 +512,25 @@ function mergeData(remote,local){
   return merged;
 }
 async function syncWithServer(mode='merge'){
+  // 先读取服务器，再合并本机与服务器资料，最后才写回；避免某一设备的旧缓存直接覆盖另一设备的新资料。
   if(syncBusy){syncAgain=true;return;}
   syncBusy=true;
   try{
-    if(mode==='pull' || mode==='refresh'){
-      const res=await fetch(SYNC_URL,{method:'GET',cache:'no-store'});
-      if(!res.ok)throw new Error('HTTP '+res.status);
-      const remote=await res.json();
-      const before=JSON.stringify(data);
-      data=mergeData(remote,data);
-      const changed=JSON.stringify(data)!==before;
-      if(changed){localStorage.setItem(KEY,JSON.stringify(data));ensureChatSessions();renderAll();}
-      if(mode==='pull'){
-        const push=await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-        if(!push.ok)throw new Error('HTTP '+push.status);
-      }
-      syncReady=true;
-      return;
+    const res=await fetch(SYNC_URL,{method:'GET',cache:'no-store'});
+    if(!res.ok)throw new Error('GET HTTP '+res.status);
+    const remote=await res.json();
+    const before=JSON.stringify(data);
+    const merged=mergeData(remote,data);
+    const changed=JSON.stringify(merged)!==before;
+    data=merged;
+    if(changed){
+      localStorage.setItem(KEY,JSON.stringify(data));
+      ensureChatSessions();
+      renderAll();
     }
-    const res=await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-    if(!res.ok)throw new Error('HTTP '+res.status);
+    // 每次同步都上传合并结果（包括 refresh），让两端新增的资料最终都写入服务器。
+    const push=await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    if(!push.ok)throw new Error('POST HTTP '+push.status);
     syncReady=true;
   }catch(e){
     syncReady=false;
