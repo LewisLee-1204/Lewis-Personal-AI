@@ -713,18 +713,6 @@ document.addEventListener('DOMContentLoaded', function () {
 }
 </style>
 
-
-<style id="lingke-v2-memory-scroll-fix">
-@media (max-width:700px) {
-  html, body { min-height:100%; height:100%; overflow:hidden !important; }
-  .layout { height:calc(100dvh - 64px) !important; min-height:0 !important; overflow:hidden !important; }
-  .center { flex:1 1 auto !important; width:100% !important; height:100% !important; min-height:0 !important; overflow-x:hidden !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior-y:contain !important; touch-action:pan-y !important; }
-  .center > .section.active:not(#page-chat):not(#page-voice) { height:auto !important; min-height:0 !important; max-height:none !important; overflow:visible !important; display:block !important; position:relative !important; padding-bottom:calc(40px + env(safe-area-inset-bottom)) !important; }
-  #page-memories, #page-notes, #page-tasks, #page-files, #page-backup, #page-settings { height:auto !important; max-height:none !important; overflow:visible !important; }
-  #page-memories > .panel, #page-memories #memoryList { height:auto !important; max-height:none !important; overflow:visible !important; }
-  #page-memories #memoryList .item { flex-shrink:0 !important; }
-}
-</style>
 </head>
 <body>
 <header class="topbar">
@@ -862,15 +850,7 @@ function mergeData(remote,local){
   merged.chatSessions=[...sessionMap.values()];
   return merged;
 }
-function setLingkeSyncStatus(state, detail=''){
-  const el=document.getElementById('lingkeSyncBadge'); if(!el)return;
-  const labels={checking:'同步状态：检查中…',ok:'同步状态：服务器连接成功',failed:'同步状态：未连接/同步失败',saving:'同步状态：正在上传…'};
-  el.textContent=(labels[state]||'同步状态：未知')+(detail?' · '+detail:'');
-  el.style.borderColor=state==='ok'?'#16865b':state==='failed'?'#b45353':'#315781';
-  el.style.color=state==='ok'?'#bbf7d0':state==='failed'?'#fecaca':'#dbeafe';
-}
 async function syncWithServer(mode='merge'){
-  setLingkeSyncStatus('checking');
   if(syncBusy){syncAgain=true;return;}
   syncBusy=true;
   try{
@@ -883,21 +863,17 @@ async function syncWithServer(mode='merge'){
       const changed=JSON.stringify(data)!==before;
       if(changed){localStorage.setItem(KEY,JSON.stringify(data));ensureChatSessions();renderAll();}
       if(mode==='pull'){
-        setLingkeSyncStatus('saving');
         const push=await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
         if(!push.ok)throw new Error('HTTP '+push.status);
       }
       syncReady=true;
-      setLingkeSyncStatus('ok','资料已读取');
       return;
     }
     const res=await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
     if(!res.ok)throw new Error('HTTP '+res.status);
     syncReady=true;
-    setLingkeSyncStatus('ok','资料已上传');
   }catch(e){
     syncReady=false;
-    setLingkeSyncStatus('failed',String(e && e.message || e).slice(0,70));
     console.warn('灵克 AI 跨设备同步暂不可用：',e);
   }finally{
     syncBusy=false;
@@ -1202,6 +1178,70 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 })();
 </script>
 
-<div id="lingkeSyncBadge" role="status" aria-live="polite" style="position:fixed;right:10px;bottom:10px;z-index:99999;padding:7px 10px;border:1px solid #315781;border-radius:12px;background:#081a32;color:#dbeafe;font:12px/1.3 system-ui,sans-serif;box-shadow:0 4px 18px #0005;max-width:calc(100vw - 28px);">同步状态：检查中…</div>
+<!-- Lingke AI mobile memory scroll hotfix: make the document, not nested flex panels, scroll on iPhone. -->
+<style id="lingke-memory-scroll-hotfix-20261028">
+@media (max-width:700px) {
+  html:has(#page-memories.section.active),
+  body:has(#page-memories.section.active) {
+    height:auto !important; min-height:100% !important; max-height:none !important;
+    overflow-x:hidden !important; overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important;
+  }
+  body:has(#page-memories.section.active) { position:static !important; }
+  body:has(#page-memories.section.active) .topbar {
+    position:relative !important; height:auto !important; min-height:0 !important;
+    overflow:visible !important; flex:none !important;
+  }
+  body:has(#page-memories.section.active) .layout {
+    display:flex !important; position:relative !important; flex-direction:column !important;
+    height:auto !important; min-height:0 !important; max-height:none !important;
+    overflow:visible !important; contain:none !important; transform:none !important;
+  }
+  body:has(#page-memories.section.active) .layout > .sidebar {
+    position:relative !important; flex:0 0 auto !important; overflow-x:auto !important;
+    overflow-y:hidden !important; max-height:none !important;
+  }
+  body:has(#page-memories.section.active) .layout > .center,
+  body:has(#page-memories.section.active) main.center {
+    display:block !important; position:relative !important; flex:0 0 auto !important;
+    width:100% !important; height:auto !important; min-height:0 !important;
+    max-height:none !important; overflow:visible !important; contain:none !important;
+    transform:none !important;
+  }
+  body:has(#page-memories.section.active) #page-memories.section.active {
+    display:block !important; position:relative !important; flex:none !important;
+    width:100% !important; height:auto !important; min-height:0 !important;
+    max-height:none !important; overflow:visible !important; overflow-y:visible !important;
+    overscroll-behavior:auto !important; touch-action:pan-y !important;
+    padding-bottom:calc(100px + env(safe-area-inset-bottom)) !important;
+    margin-bottom:24px !important; box-sizing:border-box !important;
+  }
+  body:has(#page-memories.section.active) #page-memories > .panel,
+  body:has(#page-memories.section.active) #page-memories #memoryList {
+    display:flex !important; flex-direction:column !important; height:auto !important;
+    min-height:0 !important; max-height:none !important; overflow:visible !important;
+    touch-action:pan-y !important;
+  }
+  body:has(#page-memories.section.active) #memoryList .item { flex:0 0 auto !important; }
+}
+</style>
+<script id="lingke-memory-scroll-hotfix-script">
+(function(){
+  function applyMemoryScrollMode(){
+    var isMemory=!!document.querySelector('#page-memories.section.active');
+    document.documentElement.classList.toggle('lingke-memory-page-open',isMemory);
+    document.body.classList.toggle('lingke-memory-page-open',isMemory);
+  }
+  document.addEventListener('click',function(e){
+    if(e.target.closest('[data-page="memories"], [data-goto="memories"]')) requestAnimationFrame(applyMemoryScrollMode);
+    else if(e.target.closest('[data-page], [data-goto]')) requestAnimationFrame(applyMemoryScrollMode);
+  },true);
+  window.addEventListener('pageshow',applyMemoryScrollMode);
+  window.addEventListener('resize',applyMemoryScrollMode);
+  document.addEventListener('DOMContentLoaded',applyMemoryScrollMode);
+  setTimeout(applyMemoryScrollMode,0);
+})();
+</script>
+
 </body>
 </html>
