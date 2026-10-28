@@ -642,6 +642,31 @@ html, body { min-width:0; }
 #chatSessionList .chat-session-delete{flex:0 0 24px;width:24px;height:30px;padding:0;border:1px solid rgba(110,155,210,.35);border-radius:8px;background:rgba(12,30,58,.92);color:#d7e7ff;font-size:18px;line-height:1;cursor:pointer;touch-action:manipulation}
 #chatSessionList .chat-session-delete:active{background:#a52c50;color:#fff}
 </style>
+
+<style id="lingke-mobile-voice-and-bottom-gap-fix">
+@media (max-width: 700px) {
+  .layout > .sidebar nav { scroll-padding-inline: 0 !important; overscroll-behavior-x: contain !important; }
+  .layout > .sidebar .nav-btn[data-page="voice"] { display:inline-flex!important; visibility:visible!important; opacity:1!important; flex:0 0 auto!important; position:relative!important; z-index:3!important; }
+  .layout > .sidebar .nav-btn[data-page="voice"].active { background:linear-gradient(110deg,#087bd8,#633dff)!important; color:#fff!important; border-color:#28a8ff!important; }
+  html, body { display:flex!important; flex-direction:column!important; height:100dvh!important; min-height:0!important; overflow:hidden!important; }
+  header.topbar { flex:0 0 auto!important; }
+  .layout { flex:1 1 0!important; height:auto!important; min-height:0!important; max-height:none!important; margin-bottom:0!important; padding-bottom:0!important; overflow:hidden!important; }
+  .layout > .center { flex:1 1 0!important; min-height:0!important; height:auto!important; padding-bottom:0!important; }
+  #page-chat.section.active { height:100%!important; min-height:0!important; margin-bottom:0!important; }
+  #page-chat > .panel { bottom:0!important; margin-bottom:0!important; }
+  #page-voice.section.active { display:flex!important; flex-direction:column!important; height:100%!important; min-height:0!important; max-height:100%!important; overflow:hidden!important; }
+  #page-voice .voice-stage { flex:1 1 0!important; width:100%!important; min-height:0!important; height:auto!important; overflow:hidden!important; }
+  #page-voice .voice-stage iframe { display:block!important; width:100%!important; height:100%!important; min-height:0!important; border:0!important; }
+}
+</style>
+<script id="lingke-mobile-nav-start-fix">
+document.addEventListener('DOMContentLoaded', function () {
+  const nav = document.querySelector('.layout > .sidebar nav');
+  const voice = document.querySelector('.layout > .sidebar .nav-btn[data-page="voice"]');
+  if (nav && voice) nav.scrollLeft = 0;
+});
+</script>
+
 </head>
 <body>
 <header class="topbar">
