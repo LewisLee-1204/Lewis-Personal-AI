@@ -713,6 +713,35 @@ document.addEventListener('DOMContentLoaded', function () {
 }
 </style>
 
+
+<style id="lingke-memory-scroll-safe-fix-20261028">
+/* Safe mobile-only fix: only the Memory tab becomes a bounded vertical scroller.
+   Do not change html/body/layout globally; this preserves the rest of the app shell. */
+@media (max-width: 700px) {
+  .layout > .center.lingke-memory-scroll-active {
+    display: flex !important; flex-direction: column !important;
+    flex: 1 1 0 !important; height: 100% !important; min-height: 0 !important;
+    max-height: 100% !important; overflow: hidden !important;
+  }
+  .layout > .center.lingke-memory-scroll-active > #page-memories.section.active {
+    display: block !important; position: relative !important;
+    flex: 1 1 0 !important; height: 0 !important; min-height: 0 !important;
+    max-height: none !important; box-sizing: border-box !important;
+    overflow-x: hidden !important; overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important; overscroll-behavior-y: contain !important;
+    touch-action: pan-y !important; padding-bottom: calc(48px + env(safe-area-inset-bottom)) !important;
+  }
+  .layout > .center.lingke-memory-scroll-active > #page-memories > .panel {
+    height: auto !important; min-height: max-content !important; max-height: none !important;
+    overflow: visible !important;
+  }
+  #page-memories #memoryList, #page-memories #memoryList .item {
+    height: auto !important; max-height: none !important; overflow: visible !important;
+    flex: 0 0 auto !important; touch-action: pan-y !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <header class="topbar">
@@ -1178,68 +1207,30 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 })();
 </script>
 
-<!-- Lingke AI mobile memory scroll hotfix: make the document, not nested flex panels, scroll on iPhone. -->
-<style id="lingke-memory-scroll-hotfix-20261028">
-@media (max-width:700px) {
-  html:has(#page-memories.section.active),
-  body:has(#page-memories.section.active) {
-    height:auto !important; min-height:100% !important; max-height:none !important;
-    overflow-x:hidden !important; overflow-y:auto !important;
-    -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important;
+<script id="lingke-memory-scroll-safe-fix-script">
+(function () {
+  function updateMemoryScrollMode() {
+    var center = document.querySelector('.layout > .center');
+    var memory = document.querySelector('#page-memories.section.active');
+    if (center) center.classList.toggle('lingke-memory-scroll-active', !!memory);
   }
-  body:has(#page-memories.section.active) { position:static !important; }
-  body:has(#page-memories.section.active) .topbar {
-    position:relative !important; height:auto !important; min-height:0 !important;
-    overflow:visible !important; flex:none !important;
+  function start() {
+    updateMemoryScrollMode();
+    var memory = document.getElementById('page-memories');
+    if (memory && window.MutationObserver) {
+      new MutationObserver(updateMemoryScrollMode).observe(memory, { attributes: true, attributeFilter: ['class', 'style'] });
+    }
+    document.addEventListener('click', function (event) {
+      if (event.target && event.target.closest && event.target.closest('[data-page], [data-goto]')) {
+        requestAnimationFrame(updateMemoryScrollMode);
+        setTimeout(updateMemoryScrollMode, 80);
+      }
+    }, true);
+    window.addEventListener('pageshow', updateMemoryScrollMode);
+    window.addEventListener('resize', updateMemoryScrollMode);
   }
-  body:has(#page-memories.section.active) .layout {
-    display:flex !important; position:relative !important; flex-direction:column !important;
-    height:auto !important; min-height:0 !important; max-height:none !important;
-    overflow:visible !important; contain:none !important; transform:none !important;
-  }
-  body:has(#page-memories.section.active) .layout > .sidebar {
-    position:relative !important; flex:0 0 auto !important; overflow-x:auto !important;
-    overflow-y:hidden !important; max-height:none !important;
-  }
-  body:has(#page-memories.section.active) .layout > .center,
-  body:has(#page-memories.section.active) main.center {
-    display:block !important; position:relative !important; flex:0 0 auto !important;
-    width:100% !important; height:auto !important; min-height:0 !important;
-    max-height:none !important; overflow:visible !important; contain:none !important;
-    transform:none !important;
-  }
-  body:has(#page-memories.section.active) #page-memories.section.active {
-    display:block !important; position:relative !important; flex:none !important;
-    width:100% !important; height:auto !important; min-height:0 !important;
-    max-height:none !important; overflow:visible !important; overflow-y:visible !important;
-    overscroll-behavior:auto !important; touch-action:pan-y !important;
-    padding-bottom:calc(100px + env(safe-area-inset-bottom)) !important;
-    margin-bottom:24px !important; box-sizing:border-box !important;
-  }
-  body:has(#page-memories.section.active) #page-memories > .panel,
-  body:has(#page-memories.section.active) #page-memories #memoryList {
-    display:flex !important; flex-direction:column !important; height:auto !important;
-    min-height:0 !important; max-height:none !important; overflow:visible !important;
-    touch-action:pan-y !important;
-  }
-  body:has(#page-memories.section.active) #memoryList .item { flex:0 0 auto !important; }
-}
-</style>
-<script id="lingke-memory-scroll-hotfix-script">
-(function(){
-  function applyMemoryScrollMode(){
-    var isMemory=!!document.querySelector('#page-memories.section.active');
-    document.documentElement.classList.toggle('lingke-memory-page-open',isMemory);
-    document.body.classList.toggle('lingke-memory-page-open',isMemory);
-  }
-  document.addEventListener('click',function(e){
-    if(e.target.closest('[data-page="memories"], [data-goto="memories"]')) requestAnimationFrame(applyMemoryScrollMode);
-    else if(e.target.closest('[data-page], [data-goto]')) requestAnimationFrame(applyMemoryScrollMode);
-  },true);
-  window.addEventListener('pageshow',applyMemoryScrollMode);
-  window.addEventListener('resize',applyMemoryScrollMode);
-  document.addEventListener('DOMContentLoaded',applyMemoryScrollMode);
-  setTimeout(applyMemoryScrollMode,0);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+  else start();
 })();
 </script>
 
