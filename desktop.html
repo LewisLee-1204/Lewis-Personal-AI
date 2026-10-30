@@ -438,7 +438,7 @@ const KEY='lingke_ai_data_v1';
 const $=id=>document.getElementById(id);
 const now=()=>new Date().toISOString();
 const dateText=()=>new Date().toLocaleString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long',hour:'2-digit',minute:'2-digit'});
-let data={memories:[],notes:[],tasks:[],chats:[],chatSessions:[]};
+let data={memories:[],notes:[],tasks:[],chats:[],chatSessions:[],deletedRecords:[]};
 let activeChatId=localStorage.getItem('lingke_ai_active_chat_v1')||'';
 function activeChatSessions(){return (Array.isArray(data.chatSessions)?data.chatSessions:[]).filter(c=>c&&!c.deletedAt)}
 function ensureChatSessions(){
@@ -474,7 +474,7 @@ function deleteChatSession(id){
 function toast(msg){const t=$('toast');t.textContent=msg;t.style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.style.display='none',2800)}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);data={memories:Array.isArray(d.memories)?d.memories:[],notes:Array.isArray(d.notes)?d.notes:[],tasks:Array.isArray(d.tasks)?d.tasks:[],chats:Array.isArray(d.chats)?d.chats:[],chatSessions:Array.isArray(d.chatSessions)?d.chatSessions:[]}}}catch(e){toast('读取本机资料失败，请检查浏览器储存设置')}} 
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);data={memories:Array.isArray(d.memories)?d.memories:[],notes:Array.isArray(d.notes)?d.notes:[],tasks:Array.isArray(d.tasks)?d.tasks:[],chats:Array.isArray(d.chats)?d.chats:[],chatSessions:Array.isArray(d.chatSessions)?d.chatSessions:[],deletedRecords:Array.isArray(d.deletedRecords)?d.deletedRecords:[]}}}catch(e){toast('读取本机资料失败，请检查浏览器储存设置')}} 
 function save(){try{localStorage.setItem(KEY,JSON.stringify(data));renderAll();if(typeof queueCloudSync==='function')queueCloudSync();return true}catch(e){toast('保存失败：可能是浏览器储存空间不足');return false}}
 const SYNC_URL='https://lewis.tail2ffb7c.ts.net/api/sync';
 let syncTimer=null,syncBusy=false,syncAgain=false,syncReady=false;
@@ -494,7 +494,15 @@ function mergeChatMessages(a,b){
 }
 function mergeData(remote,local){
   const merged={};
-  for(const k of ['memories','notes','tasks','chats']) merged[k]=mergeRecords(remote?.[k],local?.[k]);
+  const deletedMap=new Map();
+  [...(Array.isArray(remote?.deletedRecords)?remote.deletedRecords:[]),...(Array.isArray(local?.deletedRecords)?local.deletedRecords:[])].forEach(entry=>{
+    if(!entry||!entry.kind||entry.id===undefined||entry.id===null)return;
+    deletedMap.set(String(entry.kind)+':'+String(entry.id),entry);
+  });
+  merged.deletedRecords=[...deletedMap.values()];
+  const deletedKeys=new Set(merged.deletedRecords.map(entry=>String(entry.kind)+':'+String(entry.id)));
+  for(const k of ['memories','notes','tasks','chats']) merged[k]=mergeRecords(remote?.[k],local?.[k]).filter(item=>!deletedKeys.has(k+':'+String(item.id)));
+
   const remoteSessions=Array.isArray(remote?.chatSessions)?remote.chatSessions:[];
   const localSessions=Array.isArray(local?.chatSessions)?local.chatSessions:[];
   const sessionMap=new Map();
@@ -563,7 +571,7 @@ $('goBackup').onclick=()=>switchPage('backup');$('settingsBtn').onclick=()=>swit
 $('memoryForm').addEventListener('submit',e=>{e.preventDefault();data.memories.push({id:uid(),title:$('memoryTitle').value.trim(),text:$('memoryText').value.trim(),date:now()});if(save()){e.target.reset();toast('记忆已保存')}})
 $('noteForm').addEventListener('submit',e=>{e.preventDefault();data.notes.push({id:uid(),title:$('noteTitle').value.trim(),text:$('noteText').value.trim(),date:now()});if(save()){e.target.reset();toast('笔记已保存')}})
 $('taskForm').addEventListener('submit',e=>{e.preventDefault();data.tasks.push({id:uid(),title:$('taskTitle').value.trim(),due:$('taskDue').value,done:false,date:now()});if(save()){e.target.reset();toast('待办事项已添加')}})
-document.addEventListener('click',e=>{const del=e.target.closest('[data-delete]');if(del){const [kind,id]=del.dataset.delete.split(':');if(confirm('确定删除这条内容吗？')){data[kind]=data[kind].filter(x=>String(x.id)!==id);save();toast('已删除')}return}const tog=e.target.closest('[data-toggle]');if(tog){const t=data.tasks.find(x=>String(x.id)===tog.dataset.toggle);if(t){t.done=!t.done;save()}return}const chk=e.target.closest('[data-check]');if(chk){const t=data.tasks.find(x=>String(x.id)===chk.dataset.check);if(t){t.done=chk.checked;save()}return}const p=e.target.closest('[data-prompt]');if(p){$('chatInput').value=p.dataset.prompt;$('chatInput').focus()}});
+document.addEventListener('click',e=>{const del=e.target.closest('[data-delete]');if(del){const [kind,id]=del.dataset.delete.split(':');if(confirm('确定删除这条内容吗？')){if(!Array.isArray(data.deletedRecords))data.deletedRecords=[];if(!data.deletedRecords.some(x=>x&&String(x.kind)===kind&&String(x.id)===id))data.deletedRecords.push({kind,id,date:now()});data[kind]=data[kind].filter(x=>String(x.id)!==id);save();toast('已删除，并将在设备同步时保留删除状态')}return}const tog=e.target.closest('[data-toggle]');if(tog){const t=data.tasks.find(x=>String(x.id)===tog.dataset.toggle);if(t){t.done=!t.done;save()}return}const chk=e.target.closest('[data-check]');if(chk){const t=data.tasks.find(x=>String(x.id)===chk.dataset.check);if(t){t.done=chk.checked;save()}return}const p=e.target.closest('[data-prompt]');if(p){$('chatInput').value=p.dataset.prompt;$('chatInput').focus()}});
 $('addTaskQuick').onclick=()=>{switchPage('tasks');$('taskTitle').focus()};
 $('newChatBtn').onclick=newChat;
 $('chatSessionList').addEventListener('click',e=>{const del=e.target.closest('[data-delete-chat-session]');if(del){deleteChatSession(del.dataset.deleteChatSession);return;}const b=e.target.closest('[data-chat-session]');if(b)selectChat(b.dataset.chatSession)});
@@ -769,7 +777,7 @@ $('voiceBtn').onclick = () => {
 $('exportBtn').onclick=()=>{const payload={app:'灵克 AI',version:1,exportedAt:now(),data};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const file=new File([blob],`灵克AI备份_${new Date().toISOString().replace(/[:.]/g,'-')}.json`,{type:'application/json'});if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({title:'灵克 AI 资料备份',text:'灵克 AI JSON 备份文件',files:[file]}).then(()=>toast('已打开系统分享菜单')).catch(()=>downloadBlob(blob,file.name))}else downloadBlob(blob,file.name)};
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('备份已导出；请在「文件」中确认保存')}
 $('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const parsed=JSON.parse(await f.text());const incoming=parsed.data||parsed;if(!['memories','notes','tasks','chats'].every(k=>Array.isArray(incoming[k])))throw new Error('文件结构不正确');if($('importMode').value==='replace'){if(!confirm('替换模式会覆盖本机现有资料，确定继续吗？'))return;data={memories:incoming.memories,notes:incoming.notes,tasks:incoming.tasks,chats:incoming.chats}}else{for(const k of ['memories','notes','tasks','chats']){const existing=new Set(data[k].map(x=>String(x.id)));incoming[k].forEach(x=>{if(!x.id||!existing.has(String(x.id))){data[k].push({...x,id:x.id||uid()})}})}}save();toast('导入成功');switchPage('backup')}catch(err){alert('导入失败：请确认选择的是灵克 AI 导出的有效 JSON 文件。')}})
-$('clearBtn').onclick=()=>{if(confirm('确定清除本机所有灵克 AI 资料吗？建议先导出备份。')){if(confirm('再次确认：此操作无法自动撤销，继续清除？')){data={memories:[],notes:[],tasks:[],chats:[],chatSessions:[]};activeChatId='';ensureChatSessions();save();toast('本机资料已清除')}}}
+$('clearBtn').onclick=()=>{if(confirm('确定清除本机所有灵克 AI 资料吗？建议先导出备份。')){if(confirm('再次确认：此操作无法自动撤销，继续清除？')){data={memories:[],notes:[],tasks:[],chats:[],chatSessions:[],deletedRecords:[]};activeChatId='';ensureChatSessions();save();toast('本机资料已清除')}}}
 $('globalSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){const q=e.target.value.trim().toLowerCase();if(!q)return;const hits=[];for(const k of ['memories','notes','tasks','chats'])for(const x of data[k])if(JSON.stringify(x).toLowerCase().includes(q))hits.push({kind:k,x});if(!hits.length){toast('没有找到匹配资料');return}const first=hits[0];switchPage(({memories:'memories',notes:'notes',tasks:'tasks',chats:'chat'})[first.kind]);toast(`找到 ${hits.length} 条匹配资料；已打开相关页面`)}}); 
 $('themeBtn').onclick=()=>{document.body.classList.toggle('light');if(document.body.classList.contains('light')){document.documentElement.style.setProperty('--bg','#eaf1ff');document.documentElement.style.setProperty('--panel','#fff');document.documentElement.style.setProperty('--text','#14223d');toast('浅色主题已开启')}else{document.documentElement.style.setProperty('--bg','#030b1b');document.documentElement.style.setProperty('--panel','#081936');document.documentElement.style.setProperty('--text','#f3f7ff');toast('深色主题已开启')}};
 load();ensureChatSessions();renderAll();switchPage('chat');syncWithServer('pull');

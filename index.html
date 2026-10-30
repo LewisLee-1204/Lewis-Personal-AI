@@ -790,7 +790,7 @@ document.addEventListener('DOMContentLoaded', function () {
       <h2 class="section-title">▱ 文件管理</h2><div class="panel"><p>灵克 AI 当前支持 JSON 数据备份。你可以把导出的文件保存在 iPhone「文件」App 中。</p><button class="btn primary" id="goBackup">打开备份与还原</button><p class="hint">本网页不会自动读取整个 iPhone 文件夹；导入文件需要你手动选择。</p></div>
     </section>
     <section id="page-backup" class="section">
-      <h2 class="section-title">⟳ 备份与还原</h2><div class="panel"><p>建议定期导出备份，并将 JSON 文件保存到 iCloud Drive 或 iPhone「文件」App。导入前请确认文件来自灵克 AI。</p><div class="form"><button class="btn primary" id="exportBtn">⬇ 导出 JSON 备份</button><label class="btn" for="importFile" style="text-align:center;cursor:pointer">⬆ 选择 JSON 文件导入</label><input id="importFile" type="file" accept=".json,application/json" hidden><select id="importMode"><option value="merge">合并导入（保留现有资料）</option><option value="replace">替换现有资料（谨慎使用）</option></select><button class="btn danger" id="clearBtn">清除本机所有资料</button></div><p class="hint">导出会包含记忆、笔记、待办事项和聊天记录。资料会保存在本机，并在同步服务可用时自动同步到其他设备。若同步失败，请检查网络与 Windows 后端。</p><div id="backupInfo" class="hint"></div></div>
+      <h2 class="section-title">⟳ 备份与还原</h2><div class="panel"><p>建议定期导出备份，并将 JSON 文件保存到 iCloud Drive 或 iPhone「文件」App。导入前请确认文件来自灵克 AI。</p><div class="form"><button class="btn primary" id="exportBtn">⬇ 导出 JSON 备份</button><label class="btn" for="importFile" style="text-align:center;cursor:pointer">⬆ 选择 JSON 文件导入</label><input id="importFile" type="file" accept=".json,application/json" hidden><select id="importMode"><option value="merge">合并导入（保留现有资料）</option><option value="replace">替换现有资料（谨慎使用）</option></select><button class="btn danger" id="clearBtn">清除本机所有资料</button></div><p class="hint">导出会包含记忆、笔记、待办事项和聊天记录。资料保存在此浏览器的本机储存中，不会自动同步到其他设备。</p><div id="backupInfo" class="hint"></div></div>
     </section>
     <section id="page-settings" class="section">
       
@@ -813,7 +813,7 @@ const KEY='lingke_ai_data_v1';
 const $=id=>document.getElementById(id);
 const now=()=>new Date().toISOString();
 const dateText=()=>new Date().toLocaleString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long',hour:'2-digit',minute:'2-digit'});
-let data={memories:[],notes:[],tasks:[],chats:[],chatSessions:[]};
+let data={memories:[],notes:[],tasks:[],chats:[],chatSessions:[],deletedRecords:[]};
 let activeChatId=localStorage.getItem('lingke_ai_active_chat_v1')||'';
 function activeChatSessions(){return (Array.isArray(data.chatSessions)?data.chatSessions:[]).filter(c=>c&&!c.deletedAt)}
  function ensureChatSessions(){
@@ -832,7 +832,7 @@ function activeChatSessions(){return (Array.isArray(data.chatSessions)?data.chat
  function toast(msg){const t=$('toast');t.textContent=msg;t.style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.style.display='none',2800)}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);data={memories:Array.isArray(d.memories)?d.memories:[],notes:Array.isArray(d.notes)?d.notes:[],tasks:Array.isArray(d.tasks)?d.tasks:[],chats:Array.isArray(d.chats)?d.chats:[],chatSessions:Array.isArray(d.chatSessions)?d.chatSessions:[]}}}catch(e){toast('读取本机资料失败，请检查浏览器储存设置')}} 
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);data={memories:Array.isArray(d.memories)?d.memories:[],notes:Array.isArray(d.notes)?d.notes:[],tasks:Array.isArray(d.tasks)?d.tasks:[],chats:Array.isArray(d.chats)?d.chats:[],chatSessions:Array.isArray(d.chatSessions)?d.chatSessions:[],deletedRecords:Array.isArray(d.deletedRecords)?d.deletedRecords:[]}}}catch(e){toast('读取本机资料失败，请检查浏览器储存设置')}} 
 function save(){try{localStorage.setItem(KEY,JSON.stringify(data));renderAll();queueCloudSync();return true}catch(e){toast('保存失败：可能是浏览器储存空间不足');return false}}
 
 // 跨设备同步（由本地 Flask 后端保存；本机 localStorage 仍作为离线缓存）
@@ -862,7 +862,15 @@ function mergeChatMessages(a,b){
 }
 function mergeData(remote,local){
   const merged={};
-  for(const k of ['memories','notes','tasks','chats']) merged[k]=mergeRecords(remote?.[k],local?.[k]);
+  const deletedMap=new Map();
+  [...(Array.isArray(remote?.deletedRecords)?remote.deletedRecords:[]),...(Array.isArray(local?.deletedRecords)?local.deletedRecords:[])].forEach(entry=>{
+    if(!entry||!entry.kind||entry.id===undefined||entry.id===null)return;
+    deletedMap.set(String(entry.kind)+':'+String(entry.id),entry);
+  });
+  merged.deletedRecords=[...deletedMap.values()];
+  const deletedKeys=new Set(merged.deletedRecords.map(entry=>String(entry.kind)+':'+String(entry.id)));
+  for(const k of ['memories','notes','tasks','chats']) merged[k]=mergeRecords(remote?.[k],local?.[k]).filter(item=>!deletedKeys.has(k+':'+String(item.id)));
+
   const remoteSessions=Array.isArray(remote?.chatSessions)?remote.chatSessions:[];
   const localSessions=Array.isArray(local?.chatSessions)?local.chatSessions:[];
   const sessionMap=new Map();
@@ -880,25 +888,26 @@ function mergeData(remote,local){
   return merged;
 }
 async function syncWithServer(mode='merge'){
-  // 先读取服务器，再合并本机与服务器资料，最后才写回；避免某一设备的旧缓存直接覆盖另一设备的新资料。
   if(syncBusy){syncAgain=true;return;}
   syncBusy=true;
   try{
-    const res=await fetch(SYNC_URL,{method:'GET',cache:'no-store'});
-    if(!res.ok)throw new Error('GET HTTP '+res.status);
-    const remote=await res.json();
-    const before=JSON.stringify(data);
-    const merged=mergeData(remote,data);
-    const changed=JSON.stringify(merged)!==before;
-    data=merged;
-    if(changed){
-      localStorage.setItem(KEY,JSON.stringify(data));
-      ensureChatSessions();
-      renderAll();
+    if(mode==='pull' || mode==='refresh'){
+      const res=await fetch(SYNC_URL,{method:'GET',cache:'no-store'});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      const remote=await res.json();
+      const before=JSON.stringify(data);
+      data=mergeData(remote,data);
+      const changed=JSON.stringify(data)!==before;
+      if(changed){localStorage.setItem(KEY,JSON.stringify(data));ensureChatSessions();renderAll();}
+      if(mode==='pull'){
+        const push=await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+        if(!push.ok)throw new Error('HTTP '+push.status);
+      }
+      syncReady=true;
+      return;
     }
-    // 每次同步都上传合并结果（包括 refresh），让两端新增的资料最终都写入服务器。
-    const push=await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-    if(!push.ok)throw new Error('POST HTTP '+push.status);
+    const res=await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    if(!res.ok)throw new Error('HTTP '+res.status);
     syncReady=true;
   }catch(e){
     syncReady=false;
@@ -934,7 +943,7 @@ $('goBackup').onclick=()=>switchPage('backup');$('settingsBtn').onclick=()=>swit
 $('memoryForm').addEventListener('submit',e=>{e.preventDefault();data.memories.push({id:uid(),title:$('memoryTitle').value.trim(),text:$('memoryText').value.trim(),date:now()});if(save()){e.target.reset();toast('记忆已保存')}})
 $('noteForm').addEventListener('submit',e=>{e.preventDefault();data.notes.push({id:uid(),title:$('noteTitle').value.trim(),text:$('noteText').value.trim(),date:now()});if(save()){e.target.reset();toast('笔记已保存')}})
 $('taskForm').addEventListener('submit',e=>{e.preventDefault();data.tasks.push({id:uid(),title:$('taskTitle').value.trim(),due:$('taskDue').value,done:false,date:now()});if(save()){e.target.reset();toast('待办事项已添加')}})
-document.addEventListener('click',e=>{const del=e.target.closest('[data-delete]');if(del){const [kind,id]=del.dataset.delete.split(':');if(confirm('确定删除这条内容吗？')){data[kind]=data[kind].filter(x=>String(x.id)!==id);save();toast('已删除')}return}const tog=e.target.closest('[data-toggle]');if(tog){const t=data.tasks.find(x=>String(x.id)===tog.dataset.toggle);if(t){t.done=!t.done;save()}return}const chk=e.target.closest('[data-check]');if(chk){const t=data.tasks.find(x=>String(x.id)===chk.dataset.check);if(t){t.done=chk.checked;save()}return}const p=e.target.closest('[data-prompt]');if(p){$('chatInput').value=p.dataset.prompt;$('chatInput').focus()}});
+document.addEventListener('click',e=>{const del=e.target.closest('[data-delete]');if(del){const [kind,id]=del.dataset.delete.split(':');if(confirm('确定删除这条内容吗？')){if(!Array.isArray(data.deletedRecords))data.deletedRecords=[];if(!data.deletedRecords.some(x=>x&&String(x.kind)===kind&&String(x.id)===id))data.deletedRecords.push({kind,id,date:now()});data[kind]=data[kind].filter(x=>String(x.id)!==id);save();toast('已删除，并将在设备同步时保留删除状态')}return}const tog=e.target.closest('[data-toggle]');if(tog){const t=data.tasks.find(x=>String(x.id)===tog.dataset.toggle);if(t){t.done=!t.done;save()}return}const chk=e.target.closest('[data-check]');if(chk){const t=data.tasks.find(x=>String(x.id)===chk.dataset.check);if(t){t.done=chk.checked;save()}return}const p=e.target.closest('[data-prompt]');if(p){$('chatInput').value=p.dataset.prompt;$('chatInput').focus()}});
 $('addTaskQuick').onclick=()=>{switchPage('tasks');$('taskTitle').focus()};
 $('newChatBtn').onclick=newChat;
 $('chatSessionList').addEventListener('click',e=>{const del=e.target.closest('[data-delete-chat-session]');if(del){deleteChatSession(del.dataset.deleteChatSession);return;}const b=e.target.closest('[data-chat-session]');if(b)selectChat(b.dataset.chatSession)});
@@ -1185,7 +1194,7 @@ $('importFile').addEventListener('change',async e=>{
     input.value='';
   }
 });
-$('clearBtn').onclick=()=>{if(confirm('确定清除本机所有灵克 AI 资料吗？建议先导出备份。')){if(confirm('再次确认：此操作无法自动撤销，继续清除？')){data={memories:[],notes:[],tasks:[],chats:[],chatSessions:[]};activeChatId='';ensureChatSessions();save();toast('本机资料已清除')}}}
+$('clearBtn').onclick=()=>{if(confirm('确定清除本机所有灵克 AI 资料吗？建议先导出备份。')){if(confirm('再次确认：此操作无法自动撤销，继续清除？')){data={memories:[],notes:[],tasks:[],chats:[],chatSessions:[],deletedRecords:[]};activeChatId='';ensureChatSessions();save();toast('本机资料已清除')}}}
 $('globalSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){const q=e.target.value.trim().toLowerCase();if(!q)return;const hits=[];for(const k of ['memories','notes','tasks','chats'])for(const x of data[k])if(JSON.stringify(x).toLowerCase().includes(q))hits.push({kind:k,x});if(!hits.length){toast('没有找到匹配资料');return}const first=hits[0];switchPage(({memories:'memories',notes:'notes',tasks:'tasks',chats:'chat'})[first.kind]);toast(`找到 ${hits.length} 条匹配资料；已打开相关页面`)}}); 
 $('themeBtn').onclick=()=>{document.body.classList.toggle('light');if(document.body.classList.contains('light')){document.documentElement.style.setProperty('--bg','#eaf1ff');document.documentElement.style.setProperty('--panel','#fff');document.documentElement.style.setProperty('--text','#14223d');toast('浅色主题已开启')}else{document.documentElement.style.setProperty('--bg','#030b1b');document.documentElement.style.setProperty('--panel','#081936');document.documentElement.style.setProperty('--text','#f3f7ff');toast('深色主题已开启')}};
 /* 手机端导航兜底：委托点击事件，避免移动浏览器因触控/层叠导致页面不切换 */
